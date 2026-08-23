@@ -1,7 +1,16 @@
+venv
+.venv
+.venv_windows
+venv_windows
 venv_ubuntu
 venv_ubuntu/
 /venv_ubuntu
+venv_debian_cli
 
 db.sqlite3
 /db.sqlite3
 backend/db.sqlite3
+
+.env
+.ENV
+.plsgodhelp
