@@ -1,0 +1,7 @@
+venv_ubuntu
+venv_ubuntu/
+/venv_ubuntu
+
+db.sqlite3
+/db.sqlite3
+backend/db.sqlite3
