@@ -1,14 +1,16 @@
 # WatchTowerAI
 
-### AI College Security & Surveillance System is an AI-powered security platform designed to monitor college premises through CCTV cameras or live video feeds. The system uses Computer Vision, YOLO, and OpenCV to automatically detect people, vehicles, restricted-area entry, suspicious activities, and other security-related events in real time.
+AI College Security & Surveillance System is an AI-powered security platform designed to monitor college premises through CCTV cameras or live video feeds. The system uses Computer Vision, YOLO, and OpenCV to automatically detect people, vehicles, restricted-area entry, suspicious activities, and other security-related events in real time.
 
-### When the system detects a potentially dangerous or unauthorized event, it can generate an alert, capture evidence, and store the incident details in a database. A web-based admin dashboard allows authorized security staff to view live camera feeds, detected incidents, alerts, and historical records.
+When the system detects a potentially dangerous or unauthorized event, it can generate an alert, capture evidence, and store the incident details in a database. A web-based admin dashboard allows authorized security staff to view live camera feeds, detected incidents, alerts, and historical records.
 
 ## Stacks:
-** React, Django, DRF, PostgreSQL, YOLO, OpenCV**
+
+**React, Django, DRF, PostgreSQL, YOLO, OpenCV**
 
 ## System Architecture:
 
+```text
 Frontend
 React
 │
@@ -17,9 +19,7 @@ React
 Django + DRF
 │
 ├── PostgreSQL
-│
 ├── Authentication / RBAC
-│
 └── Incident APIs
 
 CV Worker
@@ -31,9 +31,11 @@ Python
         │
         ↓
    Django API
+```
 
-## Repo Architrecture:
+## Repo Architecture:
 
+```text
 watchtowerai/
 │
 ├── backend/
@@ -41,9 +43,11 @@ watchtowerai/
 ├── cv/
 ├── docs/
 └── README.md
+```
 
 ## Example Case Working:
 
+```text
               Camera frame
 ┌──────────────────────────────────┐
 │                                  │
@@ -90,11 +94,17 @@ Camera: Main Gate
 Timestamp: ...
 Confidence: 0.91
 Evidence: intrusion_17.jpg
+```
 
 ## Dev Notes:
-Abuzar, Team Lead: "Hi, this is a completely a new type of project with tech req that we have barely worked on. This is exactly the type of challenge I believe we will excell in, grasping new tech, binding and utilizing them together to solve a real worked problem in a workable, deployable and usable product."
-Anuj, Frontend Lead: ""
-Shikha: ""
-Shivangi: ""
 
-PS: WatchTowerAI is our 7th sem uni's minor-project, currently under development.
+Abuzar, Team Lead: "Hi, this is a completely a new type of project with tech req that we have barely worked on. This is exactly the type of challenge I believe we will excell in, grasping new tech, binding and utilizing them together to solve a real worked problem in a workable, deployable and usable product."
+
+Anuj, Frontend Lead: ""
+
+Shikha, Frontend Dev: ""
+
+Shivangi, Backend Dev: ""
+
+## PS: 
+WatchTowerAI is our 7th sem uni's minor-project, currently under development.
