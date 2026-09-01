@@ -1,110 +1,16 @@
-# WatchTowerAI
+# React + Vite
 
-AI College Security & Surveillance System is an AI-powered security platform designed to monitor college premises through CCTV cameras or live video feeds. The system uses Computer Vision, YOLO, and OpenCV to automatically detect people, vehicles, restricted-area entry, suspicious activities, and other security-related events in real time.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-When the system detects a potentially dangerous or unauthorized event, it can generate an alert, capture evidence, and store the incident details in a database. A web-based admin dashboard allows authorized security staff to view live camera feeds, detected incidents, alerts, and historical records.
+Currently, two official plugins are available:
 
-## Stacks:
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-**React, Django, DRF, PostgreSQL, YOLO, OpenCV**
+## React Compiler
 
-## System Architecture:
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-```text
-Frontend
-React
-│
-│ HTTP / JSON
-↓
-Django + DRF
-│
-├── PostgreSQL
-├── Authentication / RBAC
-└── Incident APIs
+## Expanding the ESLint configuration
 
-CV Worker
-Python
-├── OpenCV
-├── Ultralytics YOLO
-├── Tracking
-└── Zone/event logic
-        │
-        ↓
-   Django API
-```
-
-## Repo Architecture:
-
-```text
-watchtowerai/
-│
-├── backend/
-├── frontend/
-├── cv/
-├── docs/
-└── README.md
-```
-
-## Example Case Working:
-
-```text
-              Camera frame
-┌──────────────────────────────────┐
-│                                  │
-│       ┌────────────────┐         │
-│       │ RESTRICTED     │         │
-│       │      👤        │         │
-│       │                │         │
-│       └────────────────┘         │
-│                                  │
-└──────────────────────────────────┘
-
-
-YOLO detection
-       ↓
-person bounding box
-       ↓
-person coordinates
-       ↓
-zone polygon
-       ↓
-point-in-polygon test
-       ↓
-INTRUSION
-
-
-Video
-  ↓
-YOLO
-  ↓
-Person enters restricted zone
-  ↓
-Event generated
-  ↓
-Snapshot captured
-  ↓
-POST /api/incidents/
-  ↓
-PostgreSQL
-
-
-Incident #17
-Type: Restricted Area Intrusion
-Camera: Main Gate
-Timestamp: ...
-Confidence: 0.91
-Evidence: intrusion_17.jpg
-```
-
-## Dev Notes:
-
-Abuzar, Team Lead: "Hi, this is a completely a new type of project with tech req that we have barely worked on. This is exactly the type of challenge I believe we will excell in, grasping new tech, binding and utilizing them together to solve a real worked problem in a workable, deployable and usable product."
-
-Anuj, Frontend Lead: ""
-
-Shikha, Frontend Dev: ""
-
-Shivangi, Backend Dev: ""
-
-## PS: 
-WatchTowerAI is our 7th sem uni's minor-project, currently under development.
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.

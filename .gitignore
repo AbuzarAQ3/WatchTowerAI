@@ -1,16 +1,24 @@
-venv
-.venv
-.venv_windows
-venv_windows
-venv_ubuntu
-venv_ubuntu/
-/venv_ubuntu
-venv_debian_cli
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-db.sqlite3
-/db.sqlite3
-backend/db.sqlite3
+node_modules
+dist
+dist-ssr
+*.local
 
-.env
-.ENV
-.plsgodhelp
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

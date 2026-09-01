@@ -1,0 +1,27 @@
+/* AppLayout */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--clr-bg-base);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-left: var(--sidebar-width);
+  transition: margin-left var(--transition-base);
+}
+
+.app-content {
+  flex: 1;
+  padding: var(--space-6) var(--space-8);
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+@media (max-width: 768px) {
+  .app-main { margin-left: 0; }
+  .app-content { padding: var(--space-4); }
+}
