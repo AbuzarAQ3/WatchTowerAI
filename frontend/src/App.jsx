@@ -1,24 +1,32 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import Login from "./Login"
-import Dashboard from "./Dashboard"
-import Cameras from "./Cameras"
-import Incidents from "./Incidents"
-import Alerts from "./Alerts"
-import Settings from "./Settings"
-import './App.css'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import Incidents from './pages/Incidents'
+import Cameras from './pages/Cameras'
+import Alerts from './pages/Alerts'
+import Settings from './pages/Settings'
+import AppLayout from './components/layout/AppLayout'
 
-function App() {
-    return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/" element={<Login />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/cameras" element={<Cameras />} />
-                <Route path="/incidents" element={<Incidents />} />
-                <Route path="/alerts" element={<Alerts />} />
-                <Route path="/settings" element={<Settings />} />
-            </Routes>
-        </BrowserRouter>
-    )
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public */}
+        <Route path="/login" element={<Login />} />
+
+        {/* Protected shell */}
+        <Route path="/" element={<AppLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="incidents" element={<Incidents />} />
+          <Route path="cameras" element={<Cameras />} />
+          <Route path="alerts" element={<Alerts />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }
-export default App
