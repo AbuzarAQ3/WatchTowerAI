@@ -104,7 +104,7 @@ Anuj, Frontend Lead: ""
 
 Shikha, Frontend Dev: ""
 
-Shivangi, Backend Dev: ""
+Shivangi, Backend Dev: "Working on Django backend development, learning Django REST Framework (DRF), and integrating the React frontend with the backend through REST APIs."
 
 ## PS: 
 WatchTowerAI is our 7th sem uni's minor-project, currently under development.
