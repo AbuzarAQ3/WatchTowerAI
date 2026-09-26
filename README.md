@@ -96,15 +96,14 @@ Confidence: 0.91
 Evidence: intrusion_17.jpg
 ```
 
+
 ## Dev Notes:
 
-Abuzar, Team Lead: "Hi, this is a completely a new type of project with tech req that we have barely worked on. This is exactly the type of challenge I believe we will excell in, grasping new tech, binding and utilizing them together to solve a real worked problem in a workable, deployable and usable product."
+| Name | Role | GitHub | Comments |
+| :--- | :--- | :--- | :--- |
+| *[Shahabuzar]* | Team Lead, Backend Lead | [@AbuzarAQ3](https://github.com/AbuzarAQ3) | [Hi, this is a completely a new type of project with tech req that we have barely worked on. This is exactly the type of challenge I believe we will excell in, grasping new tech, binding and utilizing them together to solve a real worked problem in a workable, deployable and usable product] |
+| *[]* | Frontend Lead | []() | [] |
+| *[]* | Frontend Developer | []() | [] |
+| *[]* | Backend Developer | []() | [] |
 
-Anuj, Frontend Lead: ""
-
-Shikha, Frontend Dev: ""
-
-Shivangi, Backend Dev: ""
-
-## PS: 
-WatchTowerAI is our 7th sem uni's minor-project, currently under development.
+#### WatchTowerAI is our 7th sem uni's minor-project, currently under development.
