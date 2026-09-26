@@ -102,7 +102,7 @@ Evidence: intrusion_17.jpg
 | Name | Role | GitHub | Comments |
 | :--- | :--- | :--- | :--- |
 | *[Shahabuzar]* | Team Lead, Backend Lead | [@AbuzarAQ3](https://github.com/AbuzarAQ3) | [Hi, this is a completely a new type of project with tech req that we have barely worked on. This is exactly the type of challenge I believe we will excell in, grasping new tech, binding and utilizing them together to solve a real worked problem in a workable, deployable and usable product] |
-| *[]* | Frontend Lead | []() | [] |
+| *[Anuj Trivedi]* | Frontend Lead | [@anujtrivedi7589](https://github.com/anujtrivedi7589) | [Building the face of WatchTowerAI - Responsive dashboard, real-time monitoring, and seamless AI integration.] |
 | *[]* | Frontend Developer | []() | [] |
 | *[]* | Backend Developer | []() | [] |
 
