@@ -104,6 +104,6 @@ Evidence: intrusion_17.jpg
 | *[Shahabuzar]* | Team Lead, Backend Lead | [@AbuzarAQ3](https://github.com/AbuzarAQ3) | [Hi, this is a completely a new type of project with tech req that we have barely worked on. This is exactly the type of challenge I believe we will excell in, grasping new tech, binding and utilizing them together to solve a real worked problem in a workable, deployable and usable product] |
 | *[Anuj Trivedi]* | Frontend Lead | [@anujtrivedi7589](https://github.com/anujtrivedi7589) | [Building the face of WatchTowerAI - Responsive dashboard, real-time monitoring, and seamless AI integration.] |
 | *[]* | Frontend Developer | []() | [] |
-| *[]* | Backend Developer | []() | [] |
+| *[Shivangi Shukla]* | Backend Developer | [@shivangi577](https://github.com/shivangi577) | [Working on Django backend development, learning Django REST Framework (DRF), and integrating the React frontend with the backend through REST APIs.] |
 
 #### WatchTowerAI is our 7th sem uni's minor-project, currently under development.
