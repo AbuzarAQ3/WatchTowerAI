@@ -6,17 +6,22 @@ import Cameras from './pages/Cameras'
 import Alerts from './pages/Alerts'
 import Settings from './pages/Settings'
 import AppLayout from './components/layout/AppLayout'
+import Landing from './pages/Landing'
+import Signup from './pages/Signup'
+import Register from './pages/Register'
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
+    
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/register" element={<Register />} />
 
-        {/* Protected shell */}
+        
         <Route path="/" element={<AppLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="incidents" element={<Incidents />} />
           <Route path="cameras" element={<Cameras />} />
@@ -24,8 +29,8 @@ export default function App() {
           <Route path="settings" element={<Settings />} />
         </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

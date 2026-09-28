@@ -19,7 +19,7 @@ export default function Settings() {
   const [activeSection, setActiveSection] = useState('ai')
   const [saved, setSaved] = useState(false)
 
-  // AI Detection settings
+  
   const [aiSettings, setAiSettings] = useState({
     globalSensitivity: 78,
     model: 'yolov8x_surveillance',
@@ -33,7 +33,7 @@ export default function Settings() {
     gpuAcceleration: true,
   })
 
-  // Camera defaults
+  
   const [camSettings, setCamSettings] = useState({
     defaultFps: 30,
     resolution: '1080p',
@@ -44,7 +44,7 @@ export default function Settings() {
     autoReconnect: true,
   })
 
-  // Alerts settings
+  
   const [alertSettings, setAlertSettings] = useState({
     emailAlerts: true,
     smsAlerts: false,
@@ -55,7 +55,7 @@ export default function Settings() {
     escalationDelay: 15,
   })
 
-  // Security settings
+  
   const [secSettings, setSecSettings] = useState({
     sessionTimeout: 60,
     twoFactor: false,
@@ -65,7 +65,7 @@ export default function Settings() {
     apiKey: 'wtai-xK92m-89Pq4-••••••••',
   })
 
-  // Profile
+  
   const [profile, setProfile] = useState({
     name: 'Anuj',
     role: 'Frontend Lead',
