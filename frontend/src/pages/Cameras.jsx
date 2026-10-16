@@ -52,7 +52,7 @@ export default function Cameras() {
     setCameras(prev => [...prev, newCam])
     setShowAddModal(false)
     
-    // Reset Form
+    
     setForm({
       name: '',
       zone: 'Entry',
@@ -62,7 +62,7 @@ export default function Cameras() {
     })
   }
 
-  // Filter list
+  
   const filteredCameras = cameras.filter((cam) => {
     if (filter === 'all') return true
     return cam.status === filter
@@ -85,7 +85,6 @@ export default function Cameras() {
         </button>
       </div>
 
-      {/* Filter Deck */}
       <div className="cameras-filters">
         {['all', 'live', 'offline', 'maintenance'].map((f) => (
           <button
@@ -141,7 +140,6 @@ export default function Cameras() {
         </div>
       )}
 
-      {/* Add Camera Modal Dialog */}
       {showAddModal && (
         <div className="modal-backdrop" onClick={() => setShowAddModal(false)}>
           <div className="modal-card modal-card--sm animate-fade-in" onClick={(e) => e.stopPropagation()}>

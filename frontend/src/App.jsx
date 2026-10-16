@@ -11,12 +11,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
+        {/* Public - pehle ye khulega */}
         <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Protected shell */}
+        {/* Protected */}
         <Route path="/" element={<AppLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="incidents" element={<Incidents />} />
           <Route path="cameras" element={<Cameras />} />
@@ -24,8 +24,7 @@ export default function App() {
           <Route path="settings" element={<Settings />} />
         </Route>
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   )
