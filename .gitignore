@@ -16,7 +16,10 @@ __pycache__/
 *.pyo
 *.pyd
 
-
 .env
 .ENV
+.github
+.github/
+runs
+runs/
 .plsgodhelp
