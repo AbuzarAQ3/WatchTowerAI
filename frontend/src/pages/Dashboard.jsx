@@ -73,9 +73,8 @@ const CHART_DATA = [
   { time: '24:00', total: 7, high: 2 },
 ]
 
-// Simulated AI Bounding Box Positions
+// Simulated AI Bounding Box Positions (Used for all cameras EXCEPT ID 1 & 2)
 const AI_BOXES = {
-  1: [{ top: '30%', left: '45%', width: '12%', height: '35%', label: 'Person 94%' }],
   2: [{ top: '25%', left: '20%', width: '15%', height: '40%', label: 'Intruder 91%' }],
   3: [{ top: '40%', left: '60%', width: '20%', height: '30%', label: 'Vehicle 88%' }],
   5: [{ top: '35%', left: '30%', width: '10%', height: '28%', label: 'Person 95%' }],
@@ -163,7 +162,7 @@ export default function Dashboard() {
                     className={`camera-tile ${cam.status === 'offline' ? 'camera-tile--offline' : ''}`}
                     onClick={() => handleOpenModal(cam)}
                   >
-                    <div className="camera-tile-preview">
+                    <div className="camera-tile-preview" style={{ position: 'relative', overflow: 'hidden' }}>
                       {cam.status === 'live' ? (
                         <>
                           {cam.isPlaying ? (
@@ -174,23 +173,45 @@ export default function Dashboard() {
                               <div className="camera-corner camera-corner--bl" />
                               <div className="camera-corner camera-corner--br" />
                               
-                              {/* Simulated AI Detections */}
-                              {cam.showDetections && boxes.map((box, idx) => (
-                                <div 
-                                  key={idx} 
-                                  className="camera-ai-box animate-pulse-ring" 
+                              {/* ── LIVE INTERCEPT FOR PYTHON FLASK STREAMS (CAMERAS 1 & 2) ── */}
+                              {(cam.id === 1 || cam.id === 2) ? (
+                                <img 
+                                  src={`http://localhost:${cam.id === 1 ? 8080 : 8081}/video_feed`}
+                                  alt={`${cam.name} Live Feed`}
                                   style={{
-                                    top: box.top,
-                                    left: box.left,
-                                    width: box.width,
-                                    height: box.height
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0
                                   }}
-                                >
-                                  <span className="camera-ai-label">{box.label}</span>
-                                </div>
-                              ))}
-                              
-                              <Camera size={24} className="camera-tile-icon" />
+                                  onError={(e) => {
+                                    e.target.onerror = null;
+                                    e.target.style.display = 'none';
+                                  }}
+                                />
+                              ) : (
+                                /* Regular Hardcoded UI boxes for other cameras */
+                                <>
+                                  {cam.showDetections && boxes.map((box, idx) => (
+                                    <div 
+                                      key={idx} 
+                                      className="camera-ai-box animate-pulse-ring" 
+                                      style={{
+                                        top: box.top,
+                                        left: box.left,
+                                        width: box.width,
+                                        height: box.height
+                                      }}
+                                    >
+                                      <span className="camera-ai-label">{box.label}</span>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+
+                              {(cam.id !== 1 && cam.id !== 2) && <Camera size={24} className="camera-tile-icon" />}
                             </>
                           ) : (
                             <div className="camera-paused-screen">
@@ -410,30 +431,49 @@ export default function Dashboard() {
               
               {/* Left Column: Live Feed Preview */}
               <div className="modal-feed-pane">
-                <div className="modal-video-container">
+                <div className="modal-video-container" style={{ position: 'relative', overflow: 'hidden', backgroundColor: '#000' }}>
                   <div className="camera-scanline" aria-hidden="true" />
                   <div className="camera-corner camera-corner--tl" />
                   <div className="camera-corner camera-corner--tr" />
                   <div className="camera-corner camera-corner--bl" />
                   <div className="camera-corner camera-corner--br" />
                   
-                  {/* Bounding box rendering from configuration */}
-                  {selectedCamera.showDetections && (AI_BOXES[selectedCamera.id] || []).map((box, idx) => (
-                    <div 
-                      key={idx} 
-                      className="camera-ai-box animate-pulse-ring" 
+                  {/* ── LIVE INTERCEPT FOR ZOOM VIEW (CAMERAS 1 & 2) ── */}
+                  {(selectedCamera.id === 1 || selectedCamera.id === 2) ? (
+                    <img 
+                      src={`http://localhost:${selectedCamera.id === 1 ? 8080 : 8081}/video_feed`}
+                      alt={`${selectedCamera.name} Zoom Stream`}
                       style={{
-                        top: box.top,
-                        left: box.left,
-                        width: box.width,
-                        height: box.height
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0
                       }}
-                    >
-                      <span className="camera-ai-label">{box.label}</span>
-                    </div>
-                  ))}
+                    />
+                  ) : (
+                    /* Default UI Mock boxes for other tiles */
+                    <>
+                      {selectedCamera.showDetections && (AI_BOXES[selectedCamera.id] || []).map((box, idx) => (
+                        <div 
+                          key={idx} 
+                          className="camera-ai-box animate-pulse-ring" 
+                          style={{
+                            top: box.top,
+                            left: box.left,
+                            width: box.width,
+                            height: box.height
+                          }}
+                        >
+                          <span className="camera-ai-label">{box.label}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
 
-                  <Camera size={48} className="modal-video-placeholder-icon" />
+                  {(selectedCamera.id !== 1 && selectedCamera.id !== 2) && <Camera size={48} className="modal-video-placeholder-icon" />}
+                  
                   <div className="modal-live-banner">
                     <span className="live-dot">LIVE STREAMING</span>
                   </div>

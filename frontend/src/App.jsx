@@ -7,6 +7,10 @@ import Alerts from './pages/Alerts'
 import Settings from './pages/Settings'
 import AppLayout from './components/layout/AppLayout'
 
+// prototype_test_view
+import CameraView from './pages/CameraView'
+import CameraView1 from './pages/CameraView1'
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -22,6 +26,10 @@ export default function App() {
           <Route path="cameras" element={<Cameras />} />
           <Route path="alerts" element={<Alerts />} />
           <Route path="settings" element={<Settings />} />
+
+{/* prototype test urls */}
+          <Route path="CameraView" element={<CameraView />} />
+          <Route path="CameraView1" element={<CameraView1 />} />
         </Route>
 
         {/* Fallback */}
