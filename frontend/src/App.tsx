@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore } from './store/auth';
+import { useAuth } from './hooks/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
 
@@ -22,7 +22,7 @@ import AppLayout from './components/layout/AppLayout';
  * preventing any flash of the unauthenticated login view.
  */
 function AuthBootstrapper({ children }: { children: React.ReactNode }) {
-  const { status, restoreSession } = useAuthStore();
+  const { status, restoreSession } = useAuth();
 
   useEffect(() => {
     restoreSession();
@@ -70,54 +70,60 @@ function AuthBootstrapper({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+export function AppRoutes() {
+  return (
+    <AuthBootstrapper>
+      <Routes>
+        {/* Public routes — redirected away if already authenticated */}
+        <Route
+          path="/login"
+          element={
+            <PublicOnlyRoute>
+              <Login />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <PublicOnlyRoute>
+              <Signup />
+            </PublicOnlyRoute>
+          }
+        />
+
+        {/* Email verification routes */}
+        <Route path="/verify-email/pending" element={<VerifyEmailPending />} />
+        <Route path="/account/verify-email/:key" element={<VerifyEmail />} />
+
+        {/* Protected routes — Dashboard and surveillance views */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="incidents" element={<Incidents />} />
+          <Route path="cameras" element={<Cameras />} />
+          <Route path="alerts" element={<Alerts />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </AuthBootstrapper>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthBootstrapper>
-        <Routes>
-          {/* Public routes — redirected away if already authenticated */}
-          <Route
-            path="/login"
-            element={
-              <PublicOnlyRoute>
-                <Login />
-              </PublicOnlyRoute>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <PublicOnlyRoute>
-                <Signup />
-              </PublicOnlyRoute>
-            }
-          />
-
-          {/* Email verification routes */}
-          <Route path="/verify-email/pending" element={<VerifyEmailPending />} />
-          <Route path="/account/verify-email/:key" element={<VerifyEmail />} />
-
-          {/* Protected routes — Dashboard and surveillance views */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="incidents" element={<Incidents />} />
-            <Route path="cameras" element={<Cameras />} />
-            <Route path="alerts" element={<Alerts />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-
-          {/* Catch-all redirect */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </AuthBootstrapper>
+      <AppRoutes />
     </BrowserRouter>
   );
 }

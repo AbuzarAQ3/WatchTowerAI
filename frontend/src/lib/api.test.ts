@@ -35,6 +35,16 @@ describe('Axios API Instances and Interceptors', () => {
     expect(modifiedConfig.headers['X-Session-Token']).toBeUndefined();
   });
 
+  it('explicitly removes existing X-Session-Token header if token was cleared', async () => {
+    tokenLib.clearToken();
+
+    const requestInterceptor = (api.interceptors.request as any).handlers[0].fulfilled;
+    const config = { headers: { 'X-Session-Token': 'stale_token' } as Record<string, string> };
+    const modifiedConfig = await requestInterceptor(config);
+
+    expect(modifiedConfig.headers['X-Session-Token']).toBeUndefined();
+  });
+
   it('clears token and redirects on 401 when only login/signup flows exist (session dead)', async () => {
     tokenLib.setToken('expired_token_123');
     const clearSpy = vi.spyOn(tokenLib, 'clearToken');
@@ -42,6 +52,7 @@ describe('Axios API Instances and Interceptors', () => {
     const responseInterceptorErr = (api.interceptors.response as any).handlers[0].rejected;
 
     const error401 = {
+      config: { url: '/api/cameras/', method: 'get' },
       response: {
         status: 401,
         data: {
@@ -52,6 +63,27 @@ describe('Axios API Instances and Interceptors', () => {
     };
 
     await expect(responseInterceptorErr(error401)).rejects.toEqual(error401);
+    expect(clearSpy).toHaveBeenCalled();
+  });
+
+  it('does NOT trigger redirect on 401 when request is DELETE /auth/session (logout)', async () => {
+    tokenLib.setToken('token_logging_out');
+    const clearSpy = vi.spyOn(tokenLib, 'clearToken');
+
+    const responseInterceptorErr = (api.interceptors.response as any).handlers[0].rejected;
+
+    const logout401 = {
+      config: { url: '/_allauth/app/v1/auth/session', method: 'delete' },
+      response: {
+        status: 401,
+        data: {
+          status: 401,
+          data: { flows: [{ id: 'login' }, { id: 'signup' }] },
+        },
+      },
+    };
+
+    await expect(responseInterceptorErr(logout401)).rejects.toEqual(logout401);
     expect(clearSpy).toHaveBeenCalled();
   });
 

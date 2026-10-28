@@ -8,7 +8,7 @@ import {
   Eye,
   LogOut,
 } from 'lucide-react'
-import { useAuthStore } from '../store/auth'
+import { useAuth } from '../hooks/useAuth'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
@@ -21,8 +21,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const navigate = useNavigate()
-  const logout = useAuthStore((state) => state.logout)
-  const user = useAuthStore((state) => state.user)
+  const { logout, user } = useAuth()
 
   const handleLogout = async () => {
     await logout()

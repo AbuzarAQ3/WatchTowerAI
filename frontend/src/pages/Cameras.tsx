@@ -1,83 +1,108 @@
-import { useState } from 'react'
-import { Camera, Wifi, WifiOff, Plus, X, ShieldAlert, MonitorPlay } from 'lucide-react'
-import './Cameras.css'
-
-const INITIAL_CAMERAS = [
-  { id: 1,  name: 'Main Gate',     zone: 'Entry',       ip: '192.168.1.11', fps: 30, status: 'live' },
-  { id: 2,  name: 'North Fence',   zone: 'Perimeter',   ip: '192.168.1.12', fps: 25, status: 'live' },
-  { id: 3,  name: 'Parking Lot A', zone: 'Parking',     ip: '192.168.1.13', fps: 15, status: 'live' },
-  { id: 4,  name: 'Canteen',       zone: 'Interior',    ip: '192.168.1.14', fps: 0,  status: 'offline' },
-  { id: 5,  name: 'Library',       zone: 'Interior',    ip: '192.168.1.15', fps: 30, status: 'live' },
-  { id: 6,  name: 'Admin Block',   zone: 'Restricted',  ip: '192.168.1.16', fps: 30, status: 'live' },
-  { id: 7,  name: 'East Parking',  zone: 'Parking',     ip: '192.168.1.17', fps: 15, status: 'live' },
-  { id: 8,  name: 'Parking Lot B', zone: 'Parking',     ip: '192.168.1.18', fps: 15, status: 'maintenance' },
-]
+import React, { useState, useEffect, useCallback } from 'react';
+import { Camera as CameraIcon, Wifi, WifiOff, Plus, X, ShieldAlert, MonitorPlay, AlertTriangle, RefreshCw } from 'lucide-react';
+import { getCameras, createCamera } from '../services/cameras';
+import { isMockEnabled } from '../services/config';
+import type { Camera } from '../types/domain';
+import './Cameras.css';
 
 export default function Cameras() {
-  const [cameras, setCameras] = useState(INITIAL_CAMERAS)
-  const [filter, setFilter] = useState('all') // 'all', 'live', 'offline', 'maintenance'
-  const [showAddModal, setShowAddModal] = useState(false)
-  
+  const [cameras, setCameras] = useState<Camera[]>([]);
+  const [filter, setFilter] = useState<'all' | 'live' | 'offline' | 'maintenance'>('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   // New Camera Form State
   const [form, setForm] = useState({
     name: '',
     zone: 'Entry',
     ip: '192.168.1.',
     fps: '30',
-    status: 'live'
-  })
-  const [formError, setFormError] = useState('')
+    status: 'live' as 'live' | 'maintenance',
+  });
+  const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleInputChange = (e) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
-    setFormError('')
-  }
+  const loadCameras = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const data = await getCameras();
+      setCameras(data);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to load camera feeds. Check backend connection.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const handleAddCameraSubmit = (e) => {
-    e.preventDefault()
+  useEffect(() => {
+    loadCameras();
+  }, [loadCameras]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormError('');
+  };
+
+  const handleAddCameraSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!form.name || !form.ip || !form.fps) {
-      setFormError('Please fill in all fields.')
-      return
-    }
-    
-    const newCam = {
-      id: Date.now(),
-      name: form.name,
-      zone: form.zone,
-      ip: form.ip,
-      fps: parseInt(form.fps) || 0,
-      status: form.status
+      setFormError('Please fill in all fields.');
+      return;
     }
 
-    setCameras(prev => [...prev, newCam])
-    setShowAddModal(false)
-    
-    
-    setForm({
-      name: '',
-      zone: 'Entry',
-      ip: '192.168.1.',
-      fps: '30',
-      status: 'live'
-    })
-  }
+    setIsSubmitting(true);
+    setFormError('');
+    try {
+      const newCam = await createCamera({
+        name: form.name,
+        zone: form.zone,
+        ip: form.ip,
+        fps: parseInt(form.fps, 10) || 30,
+        status: form.status,
+      });
 
-  
+      setCameras((prev) => [...prev, newCam]);
+      setShowAddModal(false);
+      setForm({
+        name: '',
+        zone: 'Entry',
+        ip: '192.168.1.',
+        fps: '30',
+        status: 'live',
+      });
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to register camera. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const filteredCameras = cameras.filter((cam) => {
-    if (filter === 'all') return true
-    return cam.status === filter
-  })
+    if (filter === 'all') return true;
+    return cam.status === filter;
+  });
 
-  const liveCount = cameras.filter((c) => c.status === 'live').length
+  const liveCount = cameras.filter((c) => c.status === 'live').length;
 
   return (
     <div className="cameras-page animate-fade-in">
       <div className="page-header">
         <div className="page-header-left">
-          <Camera size={22} className="text-cyan animate-pulse-ring" />
+          <CameraIcon size={22} className="text-cyan animate-pulse-ring" />
           <div>
-            <h1 className="page-title">Cameras</h1>
-            <p className="page-sub">{liveCount} of {cameras.length} online feeds</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h1 className="page-title">Cameras</h1>
+              {isMockEnabled() && (
+                <span className="badge badge-warning" style={{ fontSize: '10px', padding: '2px 6px' }}>
+                  MOCK DATA
+                </span>
+              )}
+            </div>
+            <p className="page-sub">
+              {isLoading ? 'Scanning network feeds...' : `${liveCount} of ${cameras.length} online feeds`}
+            </p>
           </div>
         </div>
         <button className="btn btn-primary" id="add-camera" onClick={() => setShowAddModal(true)}>
@@ -86,7 +111,7 @@ export default function Cameras() {
       </div>
 
       <div className="cameras-filters">
-        {['all', 'live', 'offline', 'maintenance'].map((f) => (
+        {(['all', 'live', 'offline', 'maintenance'] as const).map((f) => (
           <button
             key={f}
             className={`filter-btn ${filter === f ? 'filter-btn--active' : ''}`}
@@ -97,7 +122,34 @@ export default function Cameras() {
         ))}
       </div>
 
-      {filteredCameras.length === 0 ? (
+      {errorMessage && (
+        <div className="card" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={18} className="text-danger" />
+            <span style={{ fontSize: '13px', color: 'var(--clr-text-secondary)' }}>{errorMessage}</span>
+          </div>
+          <button className="btn btn-ghost" onClick={loadCameras} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <RefreshCw size={13} /> Retry
+          </button>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="card cameras-empty-state">
+          <div
+            style={{
+              width: '32px',
+              height: '32px',
+              border: '3px solid rgba(6, 182, 212, 0.2)',
+              borderTopColor: 'var(--clr-cyan, #06b6d4)',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }}
+          />
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          <p style={{ marginTop: '8px', color: 'var(--clr-text-muted)' }}>Connecting to camera infrastructure...</p>
+        </div>
+      ) : filteredCameras.length === 0 ? (
         <div className="card cameras-empty-state">
           <ShieldAlert size={36} className="text-muted" style={{ opacity: 0.5 }} />
           <p>No camera feeds found matching the selected status filter.</p>
@@ -107,7 +159,7 @@ export default function Cameras() {
           {filteredCameras.map((cam) => (
             <div key={cam.id} className={`camera-card ${cam.status !== 'live' ? 'camera-card--dim' : ''}`}>
               <div className="camera-card-preview">
-                <Camera size={28} className="camera-card-icon" />
+                <CameraIcon size={28} className="camera-card-icon" />
                 {cam.status === 'live' && (
                   <>
                     <div className="camera-scanline" />
@@ -118,21 +170,27 @@ export default function Cameras() {
               <div className="camera-card-body">
                 <div className="camera-card-top">
                   <p className="camera-card-name">{cam.name}</p>
-                  <span className={`badge ${
-                    cam.status === 'live' 
-                      ? 'badge-success' 
-                      : cam.status === 'offline' 
-                        ? 'badge-danger' 
+                  <span
+                    className={`badge ${
+                      cam.status === 'live'
+                        ? 'badge-success'
+                        : cam.status === 'offline'
+                        ? 'badge-danger'
                         : 'badge-warning'
-                  }`}>
+                    }`}
+                  >
                     {cam.status === 'live' ? <Wifi size={10} /> : <WifiOff size={10} />}
                     {cam.status}
                   </span>
                 </div>
                 <p className="camera-card-zone">{cam.zone}</p>
                 <div className="camera-card-meta">
-                  <span className="font-mono" style={{ fontSize: '11px', color: 'var(--clr-text-muted)' }}>{cam.ip}</span>
-                  <span className="font-mono" style={{ fontSize: '11px', color: 'var(--clr-text-muted)' }}>{cam.fps} fps</span>
+                  <span className="font-mono" style={{ fontSize: '11px', color: 'var(--clr-text-muted)' }}>
+                    {cam.ip}
+                  </span>
+                  <span className="font-mono" style={{ fontSize: '11px', color: 'var(--clr-text-muted)' }}>
+                    {cam.fps} fps
+                  </span>
                 </div>
               </div>
             </div>
@@ -143,7 +201,6 @@ export default function Cameras() {
       {showAddModal && (
         <div className="modal-backdrop" onClick={() => setShowAddModal(false)}>
           <div className="modal-card modal-card--sm animate-fade-in" onClick={(e) => e.stopPropagation()}>
-            
             <div className="modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <MonitorPlay size={18} className="text-cyan" />
@@ -156,7 +213,6 @@ export default function Cameras() {
 
             <form onSubmit={handleAddCameraSubmit} className="camera-form">
               <div className="form-grid">
-                
                 <div className="config-group">
                   <label htmlFor="cam-name" className="config-label">Camera Identifier</label>
                   <input
@@ -231,7 +287,6 @@ export default function Cameras() {
                     <option value="maintenance">Maintenance</option>
                   </select>
                 </div>
-
               </div>
 
               {formError && (
@@ -244,15 +299,14 @@ export default function Cameras() {
                 <button type="button" className="btn btn-ghost" onClick={() => setShowAddModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Connect Camera
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Connecting...' : 'Connect Camera'}
                 </button>
               </div>
             </form>
-
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

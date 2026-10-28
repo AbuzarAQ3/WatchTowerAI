@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuthStore, type ApiError } from '../store/auth';
+import { useAuth } from '../hooks/useAuth';
+import type { ApiError } from '../store/auth';
 import { FormErrors, FieldError, getFieldError } from '../components/FormErrors';
 
 export default function Signup() {
   const navigate = useNavigate();
-  const { signup, setPendingEmail } = useAuthStore();
+  const { signup, setPendingEmail } = useAuth();
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -143,6 +144,7 @@ export default function Signup() {
             <input
               id="signup-username"
               name="username"
+              data-testid="signup-username-input"
               type="text"
               autoComplete="username"
               required
@@ -168,6 +170,7 @@ export default function Signup() {
             <input
               id="signup-email"
               name="email"
+              data-testid="signup-email-input"
               type="email"
               autoComplete="email"
               required
@@ -194,6 +197,7 @@ export default function Signup() {
               <input
                 id="signup-password"
                 name="password"
+                data-testid="signup-password-input"
                 type={showPass ? 'text' : 'password'}
                 autoComplete="new-password"
                 required
@@ -262,7 +266,9 @@ export default function Signup() {
           {/* Submit button */}
           <button
             type="submit"
+            data-testid="signup-submit-button"
             disabled={isLoading}
+            aria-busy={isLoading}
             className="btn btn-primary"
             style={{
               width: '100%',

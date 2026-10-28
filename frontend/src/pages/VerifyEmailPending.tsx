@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
-import { useAuthStore } from '../store/auth';
+import { useAuth } from '../hooks/useAuth';
 
 export default function VerifyEmailPending() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { pendingFlows, pendingEmail } = useAuthStore();
+  const { pendingFlows, pendingEmail } = useAuth();
 
   const email = (location.state as any)?.email || pendingEmail;
   const hasPendingFlow = pendingFlows.includes('verify_email') || !!email;

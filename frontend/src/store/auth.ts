@@ -274,27 +274,64 @@ export const useAuthStore = create<AuthState>((set) => ({
           pendingFlows: [],
         });
       } else {
-        clearToken();
-        set({ user: null, token: null, status: 'unauthenticated' });
+        const flowsRaw = responseData?.flows || responseData?.data?.flows;
+        const hasPendingFlow =
+          Array.isArray(flowsRaw) &&
+          flowsRaw.some(
+            (flow: any) =>
+              flow.is_pending === true ||
+              (flow.id && flow.id !== 'login' && flow.id !== 'signup')
+          );
+
+        if (hasPendingFlow) {
+          const flows = flowsRaw.map((f: any) =>
+            typeof f === 'string' ? f : f.id
+          );
+          set({
+            user: null,
+            token,
+            pendingFlows: flows,
+            status: 'unauthenticated',
+          });
+        } else {
+          clearToken();
+          set({ user: null, token: null, status: 'unauthenticated', pendingFlows: [] });
+        }
       }
-    } catch (error) {
-      clearToken();
-      set({ user: null, token: null, status: 'unauthenticated' });
+    } catch (error: any) {
+      const response = error?.response;
+      const responseData = response?.data;
+      const flowsRaw = responseData?.data?.flows || responseData?.flows;
+
+      const hasPendingFlow =
+        Array.isArray(flowsRaw) &&
+        flowsRaw.some(
+          (flow: any) =>
+            flow.is_pending === true ||
+            (flow.id && flow.id !== 'login' && flow.id !== 'signup')
+        );
+
+      if (hasPendingFlow) {
+        // Pending flow (e.g. verify_email): retain token, set pendingFlows, status stays "unauthenticated"
+        const flows = flowsRaw.map((f: any) =>
+          typeof f === 'string' ? f : f.id
+        );
+        set({
+          user: null,
+          token,
+          pendingFlows: flows,
+          status: 'unauthenticated',
+        });
+      } else {
+        // Truly dead session (no pending flows or missing flows): clear token
+        clearToken();
+        set({ user: null, token: null, status: 'unauthenticated', pendingFlows: [] });
+      }
     }
   },
 }));
 
-/**
- * Convenient React hook wrapper around useAuthStore
- */
-export function useAuth() {
-  const store = useAuthStore();
-  return {
-    ...store,
-    isAuthenticated: store.status === 'authenticated',
-    isLoading: store.status === 'loading',
-  };
-}
+export { useAuth } from '../hooks/useAuth';
 
 // TODO: Social login buttons driven by /config
 // TODO: MFA flow after login

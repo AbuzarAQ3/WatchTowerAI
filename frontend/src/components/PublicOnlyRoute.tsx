@@ -1,13 +1,13 @@
 import React from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
-import { useAuthStore } from '../store/auth';
+import { useAuth } from '../hooks/useAuth';
 
 interface PublicOnlyRouteProps {
   children?: React.ReactNode;
 }
 
 export const PublicOnlyRoute: React.FC<PublicOnlyRouteProps> = ({ children }) => {
-  const { status } = useAuthStore();
+  const { status } = useAuth();
   const location = useLocation();
 
   if (status === 'loading') {

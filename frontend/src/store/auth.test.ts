@@ -152,6 +152,37 @@ describe('Auth Store (Zustand)', () => {
     expect(tokenLib.getToken()).toBeNull();
   });
 
+  it('handles restoreSession when pending flow exists (e.g. verify_email): preserves token, sets pendingFlows, status remains unauthenticated', async () => {
+    tokenLib.setToken('pending_flow_token_123');
+
+    vi.mocked(authApi.get).mockRejectedValueOnce({
+      response: {
+        status: 401,
+        data: {
+          status: 401,
+          data: {
+            flows: [
+              { id: 'login' },
+              { id: 'signup' },
+              { id: 'verify_email', is_pending: true },
+            ],
+          },
+        },
+      },
+    });
+
+    await useAuthStore.getState().restoreSession();
+
+    const state = useAuthStore.getState();
+    // Status must remain unauthenticated (never authenticated)
+    expect(state.status).toBe('unauthenticated');
+    expect(state.user).toBeNull();
+    // Token must be preserved (NOT cleared)
+    expect(state.token).toBe('pending_flow_token_123');
+    expect(tokenLib.getToken()).toBe('pending_flow_token_123');
+    expect(state.pendingFlows).toContain('verify_email');
+  });
+
   it('handles logout: calls backend, clears token and store state even if network fails', async () => {
     tokenLib.setToken('token_to_logout');
     useAuthStore.setState({
@@ -162,6 +193,31 @@ describe('Auth Store (Zustand)', () => {
 
     // Simulate backend network failure during logout
     vi.mocked(authApi.delete).mockRejectedValueOnce(new Error('Network error'));
+
+    await useAuthStore.getState().logout();
+
+    const state = useAuthStore.getState();
+    expect(state.status).toBe('unauthenticated');
+    expect(state.user).toBeNull();
+    expect(state.token).toBeNull();
+    expect(tokenLib.getToken()).toBeNull();
+  });
+
+  it('handles logout when backend returns 401: cleanly clears token and resets store state', async () => {
+    tokenLib.setToken('token_to_logout_401');
+    useAuthStore.setState({
+      user: { id: 1, username: 'user1' },
+      token: 'token_to_logout_401',
+      status: 'authenticated',
+    });
+
+    // Simulate backend returning 401 on session delete
+    vi.mocked(authApi.delete).mockRejectedValueOnce({
+      response: {
+        status: 401,
+        data: { detail: 'Session expired' },
+      },
+    });
 
     await useAuthStore.getState().logout();
 

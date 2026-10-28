@@ -28,11 +28,13 @@ export const authApi: AxiosInstance = axios.create({
  * Attach request and response interceptors to an Axios instance
  */
 function attachInterceptors(instance: AxiosInstance): void {
-  // Request interceptor: attach X-Session-Token header if token is present
+  // Request interceptor: attach X-Session-Token header if token is present, delete if absent
   instance.interceptors.request.use((config) => {
     const token = getToken();
     if (token) {
       config.headers['X-Session-Token'] = token;
+    } else if (config.headers) {
+      delete config.headers['X-Session-Token'];
     }
     return config;
   });
@@ -54,10 +56,19 @@ function attachInterceptors(instance: AxiosInstance): void {
               (flow.id && flow.id !== 'login' && flow.id !== 'signup')
           );
 
+        const isLogoutRequest =
+          error.config?.url?.includes('/auth/session') &&
+          error.config?.method?.toLowerCase() === 'delete';
+
         // If flows only contain login/signup (no pending flows), the session is dead
         if (!hasPendingFlow) {
           clearToken();
-          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          // Exclude DELETE /auth/session logout requests from triggering interceptor redirect
+          if (
+            !isLogoutRequest &&
+            typeof window !== 'undefined' &&
+            window.location.pathname !== '/login'
+          ) {
             window.location.href = '/login';
           }
         }

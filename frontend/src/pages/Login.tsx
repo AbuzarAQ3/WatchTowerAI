@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuthStore, type ApiError } from '../store/auth';
+import { useAuth } from '../hooks/useAuth';
+import type { ApiError } from '../store/auth';
 import { FormErrors, FieldError, getFieldError } from '../components/FormErrors';
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, setPendingEmail } = useAuthStore();
+  const { login, setPendingEmail } = useAuth();
 
   const [username, setUsername] = useState('abuzar');
   const [password, setPassword] = useState('StrongPass123!');
@@ -271,6 +272,7 @@ export default function Login() {
               <input
                 id="username"
                 name="username"
+                data-testid="login-username-input"
                 type="text"
                 autoComplete="username"
                 required
@@ -297,6 +299,7 @@ export default function Login() {
                 <input
                   id="password"
                   name="password"
+                  data-testid="login-password-input"
                   type={showPass ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
@@ -382,7 +385,9 @@ export default function Login() {
             {/* Submit Button */}
             <button
               type="submit"
+              data-testid="login-submit-button"
               disabled={isLoading}
+              aria-busy={isLoading}
               className="btn btn-primary"
               style={{
                 width: '100%',

@@ -1,13 +1,13 @@
 import React from 'react';
 import { Navigate, useLocation, Outlet } from 'react-router-dom';
-import { useAuthStore } from '../store/auth';
+import { useAuth } from '../hooks/useAuth';
 
 interface ProtectedRouteProps {
   children?: React.ReactNode;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { status } = useAuthStore();
+  const { status, pendingFlows } = useAuth();
   const location = useLocation();
 
   if (status === 'loading') {
@@ -44,6 +44,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (status === 'unauthenticated') {
+    if (pendingFlows.includes('verify_email')) {
+      return <Navigate to="/verify-email/pending" replace />;
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
