@@ -1,25 +1,14 @@
-import React, { useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import React from 'react';
+import { useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../components/Toast';
 
 export default function VerifyEmailPending() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { pendingFlows, pendingEmail } = useAuth();
+  const { pendingEmail } = useAuth();
+  const { showToast } = useToast();
 
-  const email = (location.state as any)?.email || pendingEmail;
-  const hasPendingFlow = pendingFlows.includes('verify_email') || !!email;
-
-  useEffect(() => {
-    // If the user navigates here without a pending flow, redirect to /login
-    if (!hasPendingFlow) {
-      navigate('/login', { replace: true });
-    }
-  }, [hasPendingFlow, navigate]);
-
-  if (!hasPendingFlow) {
-    return null;
-  }
+  const email = (location.state as any)?.email || pendingEmail || 'your registered email';
 
   return (
     <div
@@ -60,7 +49,6 @@ export default function VerifyEmailPending() {
           textAlign: 'center',
         }}
       >
-        {/* Radar / Envelope Icon */}
         <div
           style={{
             width: '64px',
@@ -95,9 +83,9 @@ export default function VerifyEmailPending() {
         </h1>
 
         <p style={{ fontSize: '13px', color: 'var(--clr-text-secondary, #94a3b8)', lineHeight: '1.6', marginBottom: '20px' }}>
-          We sent a verification link to{' '}
+          Check your email — we sent a verification link to{' '}
           <strong style={{ color: 'var(--clr-amber, #f59e0b)' }}>
-            {email || 'your registered email'}
+            {email}
           </strong>
           . Click it to activate your account and complete zero-trust enrollment.
         </p>
@@ -125,21 +113,19 @@ export default function VerifyEmailPending() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {/* TODO: Resend verification email button */}
           <button
             type="button"
-            disabled
+            onClick={() => showToast('Resend not implemented yet', 'info')}
             className="btn btn-ghost"
             style={{
               width: '100%',
               justifyContent: 'center',
               padding: '12px',
               fontSize: '11px',
-              opacity: 0.5,
-              cursor: 'not-allowed',
+              cursor: 'pointer',
             }}
           >
-            ↻ Resend Verification Email (Cooldowned)
+            ↻ Resend Verification Email
           </button>
 
           <Link
@@ -159,3 +145,6 @@ export default function VerifyEmailPending() {
     </div>
   );
 }
+
+export { VerifyEmailPending as PendingVerificationPage };
+export { VerifyEmailPending as VerifyEmailPendingPage };

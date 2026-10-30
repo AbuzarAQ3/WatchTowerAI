@@ -9,6 +9,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
+import { useToast } from './Toast'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
@@ -22,9 +23,11 @@ const NAV_ITEMS = [
 export default function Sidebar() {
   const navigate = useNavigate()
   const { logout, user } = useAuth()
+  const { showToast } = useToast()
 
   const handleLogout = async () => {
     await logout()
+    showToast('Logged out successfully', 'success')
     navigate('/login')
   }
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import type { ApiError } from '../store/auth';
 import { FormErrors, FieldError, getFieldError } from '../components/FormErrors';
+import PasswordStrength from '../components/PasswordStrength/PasswordStrength';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -44,10 +45,12 @@ export default function Signup() {
       if (result.kind === 'success') {
         navigate('/dashboard', { replace: true });
       } else if (result.kind === 'pending') {
-        setPendingEmail(email);
-        navigate('/verify-email/pending', {
-          state: { email },
-        });
+        if (result.flows.includes('verify_email')) {
+          setPendingEmail(email);
+          navigate('/verify-email/pending', {
+            state: { email },
+          });
+        }
       } else if (result.kind === 'error') {
         setErrors(result.errors);
       }
@@ -261,6 +264,7 @@ export default function Signup() {
                 </span>
               </div>
             )}
+            {password.length > 0 && <PasswordStrength password={password} />}
           </div>
 
           {/* Submit button */}

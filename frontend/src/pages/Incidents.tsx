@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { getIncidents, updateIncidentStatus } from '../services/incidents';
 import { isMockEnabled } from '../services/config';
+import { useToast } from '../components/Toast';
 import type { Incident } from '../types/domain';
 import './Incidents.css';
 
@@ -21,6 +22,7 @@ const SEV_CLASS: Record<string, string> = {
 };
 
 export default function Incidents() {
+  const { showToast } = useToast();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [search, setSearch] = useState('');
   const [severityFilter, setSeverityFilter] = useState('all');
@@ -61,12 +63,14 @@ export default function Incidents() {
 
     try {
       await updateIncidentStatus(id, newStatus);
+      showToast(`Incident status updated to ${newStatus}`, 'success');
     } catch (err: any) {
       // Revert if request fails
       setIncidents((prev) =>
         prev.map((inc) => (inc.id === id ? { ...inc, status: current.status } : inc))
       );
       setErrorMessage(err?.message || 'Failed to update incident status.');
+      showToast(err?.message || 'Failed to update incident status', 'error');
     }
   };
 
@@ -159,7 +163,7 @@ export default function Incidents() {
       </div>
 
       {errorMessage && (
-        <div className="card" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div role="alert" className="card" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <AlertTriangle size={18} className="text-danger" />
             <span style={{ fontSize: '13px', color: 'var(--clr-text-secondary)' }}>{errorMessage}</span>

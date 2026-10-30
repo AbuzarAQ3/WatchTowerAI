@@ -2,6 +2,7 @@ import api from '../lib/api';
 import { isMockEnabled, mockDelay } from './config';
 import { INITIAL_CAMERAS } from './mock/cameras.mock';
 import { toCamera } from './mappers';
+import { fetchAllPages } from './pagination';
 import type { Camera } from '../types/domain';
 import type { CameraApi, PaginatedResponse } from '../types/api';
 
@@ -25,8 +26,7 @@ export async function getCameras(): Promise<Camera[]> {
     return [...mockCamerasState];
   }
 
-  const response = await api.get<PaginatedResponse<CameraApi> | CameraApi[]>('/api/cameras/');
-  const rawList = Array.isArray(response.data) ? response.data : response.data?.results || [];
+  const rawList = await fetchAllPages<CameraApi>('/api/cameras/?page_size=100');
   return rawList.map(toCamera);
 }
 

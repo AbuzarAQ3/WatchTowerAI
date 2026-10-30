@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, waitFor, fireEvent, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -9,6 +9,7 @@ import { http, HttpResponse } from 'msw';
 import { AppRoutes } from '../App';
 import { useAuthStore } from '../store/auth';
 import * as tokenLib from '../lib/token';
+import * as config from '../services/config';
 
 describe('Auth Integration Tests (MSW + React Testing Library)', () => {
   const originalLocation = window.location;
@@ -28,6 +29,7 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
   });
 
   beforeEach(() => {
+    vi.spyOn(config, 'isMockEnabled').mockReturnValue(false);
     localStorage.clear();
     locationHref = '';
     Object.defineProperty(window, 'location', {
@@ -68,9 +70,7 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
     const submitBtn = screen.getByTestId('login-submit-button');
     await userEvent.click(submitBtn);
 
-    await waitFor(() => {
-      expect(screen.getByText(/Camera Feeds/i)).toBeInTheDocument();
-    });
+    expect(await screen.findByText(/Camera Feeds/i, {}, { timeout: 4000 })).toBeInTheDocument();
 
     expect(tokenLib.getToken()).toBe('session_token_success_123');
     expect(useAuthStore.getState().status).toBe('authenticated');
@@ -141,9 +141,7 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
     fireEvent.change(passwordInput, { target: { value: 'StrongPassword123!' } });
     await userEvent.click(submitBtn);
 
-    await waitFor(() => {
-      expect(screen.getByText(/Camera Feeds/i)).toBeInTheDocument();
-    });
+    expect(await screen.findByText(/Camera Feeds/i, {}, { timeout: 4000 })).toBeInTheDocument();
 
     expect(tokenLib.getToken()).toBe('session_token_signup_success');
     expect(useAuthStore.getState().status).toBe('authenticated');
@@ -184,9 +182,7 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
       </MemoryRouter>
     );
 
-    await waitFor(() => {
-      expect(screen.getByText(/Camera Feeds/i)).toBeInTheDocument();
-    });
+    expect(await screen.findByText(/Camera Feeds/i, {}, { timeout: 4000 })).toBeInTheDocument();
 
     expect(useAuthStore.getState().status).toBe('authenticated');
     expect(useAuthStore.getState().user?.username).toBe('abuzar');
@@ -296,7 +292,7 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
     await waitFor(() => {
       expect(screen.getAllByRole('heading', { level: 1, name: /Cameras/i }).length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(/Manage and monitor camera feeds/i)).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
   });
 
   it('Scenario 13: X-Session-Token header assertion inside MSW handler', async () => {

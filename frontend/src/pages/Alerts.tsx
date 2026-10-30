@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Bell,
   AlertTriangle,
@@ -17,6 +17,8 @@ import {
   dismissAlert,
 } from '../services/alerts';
 import { isMockEnabled } from '../services/config';
+import { useToast } from '../components/Toast';
+import { usePolling } from '../hooks/usePolling';
 import type { Alert } from '../types/domain';
 import './Alerts.css';
 
@@ -33,17 +35,22 @@ const ACCENT: Record<string, string> = {
 };
 
 export default function Alerts() {
+  const { showToast } = useToast();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [cameraQuery, setCameraQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const dismissedIdsRef = useRef<Set<string>>(new Set());
+  const mutationVersionRef = useRef(0);
 
   const loadAlerts = useCallback(async () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
       const data = await getAlerts();
-      setAlerts(data);
+      const filtered = data.filter((a) => !dismissedIdsRef.current.has(a.id));
+      setAlerts(filtered);
     } catch (err: any) {
       setErrorMessage(err?.message || 'Failed to retrieve active security alerts.');
     } finally {
@@ -51,45 +58,80 @@ export default function Alerts() {
     }
   }, []);
 
+  const pollAlerts = useCallback(async () => {
+    const versionAtStart = mutationVersionRef.current;
+    const data = await getAlerts();
+    // Discard stale in-flight poll response if user performed a mutation while request was in-flight
+    if (mutationVersionRef.current !== versionAtStart) return;
+
+    setAlerts((prev) => {
+      const activeData = data.filter((a) => !dismissedIdsRef.current.has(a.id));
+      const prevAckMap = new Map(prev.map((p) => [p.id, p.acknowledged]));
+      return activeData.map((item) => ({
+        ...item,
+        acknowledged: prevAckMap.has(item.id) ? (prevAckMap.get(item.id) || item.acknowledged) : item.acknowledged,
+      }));
+    });
+  }, []);
+
+  const { isReconnecting } = usePolling({
+    intervalMs: 10_000,
+    onPoll: pollAlerts,
+  });
+
   useEffect(() => {
     loadAlerts();
   }, [loadAlerts]);
 
   const handleAcknowledge = async (id: string) => {
+    mutationVersionRef.current++;
     // Optimistic UI update
     setAlerts((prev) =>
       prev.map((a) => (a.id === id ? { ...a, acknowledged: true } : a))
     );
     try {
       await acknowledgeAlert(id);
+      showToast('Alert acknowledged', 'success');
     } catch (err: any) {
+      mutationVersionRef.current++;
       // Revert if error
       setAlerts((prev) =>
         prev.map((a) => (a.id === id ? { ...a, acknowledged: false } : a))
       );
       setErrorMessage(err?.message || 'Failed to acknowledge alert.');
+      showToast(err?.message || 'Failed to acknowledge alert', 'error');
     }
   };
 
   const handleDismiss = async (id: string) => {
+    mutationVersionRef.current++;
+    dismissedIdsRef.current.add(id);
     const backup = [...alerts];
     setAlerts((prev) => prev.filter((a) => a.id !== id));
     try {
       await dismissAlert(id);
+      showToast('Alert dismissed', 'success');
     } catch (err: any) {
+      mutationVersionRef.current++;
+      dismissedIdsRef.current.delete(id);
       setAlerts(backup);
       setErrorMessage(err?.message || 'Failed to dismiss alert.');
+      showToast(err?.message || 'Failed to dismiss alert', 'error');
     }
   };
 
   const handleAcknowledgeAll = async () => {
+    mutationVersionRef.current++;
     const backup = [...alerts];
     setAlerts((prev) => prev.map((a) => ({ ...a, acknowledged: true })));
     try {
       await acknowledgeAllAlerts();
+      showToast('All alerts acknowledged', 'success');
     } catch (err: any) {
+      mutationVersionRef.current++;
       setAlerts(backup);
       setErrorMessage(err?.message || 'Failed to acknowledge all alerts.');
+      showToast(err?.message || 'Failed to acknowledge all alerts', 'error');
     }
   };
 
@@ -113,6 +155,15 @@ export default function Alerts() {
                   MOCK DATA
                 </span>
               )}
+              {isReconnecting && (
+                <span
+                  className="badge badge-warning font-mono"
+                  style={{ fontSize: '10px', padding: '2px 6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                  role="status"
+                >
+                  <RefreshCw size={10} className="animate-spin" /> Reconnecting...
+                </span>
+              )}
             </div>
             <p className="page-sub">
               {isLoading
@@ -129,7 +180,7 @@ export default function Alerts() {
       </div>
 
       {errorMessage && (
-        <div className="card" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div role="alert" className="card" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <AlertTriangle size={18} className="text-danger" />
             <span style={{ fontSize: '13px', color: 'var(--clr-text-secondary)' }}>{errorMessage}</span>

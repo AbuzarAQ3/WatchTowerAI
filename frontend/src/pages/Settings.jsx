@@ -1,9 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Settings as SettingsIcon, Shield, Bell, Camera,
   Brain, User, Save, RotateCcw, Check, ChevronRight,
-  Monitor, Wifi, AlertTriangle, Database, Key, Sliders
+  Monitor, Wifi, AlertTriangle, Database, Key, Sliders, Loader2
 } from 'lucide-react'
+import { getSettings, saveSettings } from '../services/settings'
+import { useToast } from '../components/Toast'
+import PasswordStrength from '../components/PasswordStrength/PasswordStrength'
 import './Settings.css'
 
 const SECTION_NAV = [
@@ -16,8 +19,12 @@ const SECTION_NAV = [
 ]
 
 export default function Settings() {
+  const { showToast } = useToast()
   const [activeSection, setActiveSection] = useState('ai')
   const [saved, setSaved] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [pendingNotice, setPendingNotice] = useState(null)
+  const [newPassword, setNewPassword] = useState('')
 
   
   const [aiSettings, setAiSettings] = useState({
@@ -73,9 +80,45 @@ export default function Settings() {
     department: 'Computer Science',
   })
 
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+  useEffect(() => {
+    let mounted = true
+    getSettings().then((data) => {
+      if (mounted && data) {
+        if (data.ai) setAiSettings(data.ai)
+        if (data.cameras) setCamSettings(data.cameras)
+        if (data.alerts) setAlertSettings(data.alerts)
+        if (data.security) setSecSettings(data.security)
+        if (data.profile) setProfile(data.profile)
+      }
+    }).catch(console.error)
+    return () => { mounted = false }
+  }, [])
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    try {
+      const res = await saveSettings({
+        ai: aiSettings,
+        cameras: camSettings,
+        alerts: alertSettings,
+        security: secSettings,
+        profile,
+      })
+      setSaved(true)
+      if (res && res.isPendingBackend) {
+        setPendingNotice(res.message || 'Backend endpoint pending')
+        showToast(res.message || 'Backend endpoint pending. Changes saved in local session only.', 'info')
+      } else {
+        setPendingNotice(null)
+        showToast('Settings saved successfully', 'success')
+      }
+      setTimeout(() => setSaved(false), 2500)
+    } catch (err) {
+      console.error('Failed to save settings:', err)
+      showToast('Failed to save settings', 'error')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const toggleAI = (key) => setAiSettings(p => ({ ...p, [key]: !p[key] }))
@@ -94,13 +137,43 @@ export default function Settings() {
             <p className="page-sub">System configuration and preferences</p>
           </div>
         </div>
-        <button
-          className={`btn ${saved ? 'btn-success' : 'btn-primary'}`}
-          onClick={handleSave}
-          id="save-settings"
-        >
-          {saved ? <><Check size={15} /> Saved!</> : <><Save size={15} /> Save Changes</>}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {pendingNotice && (
+            <span
+              className="font-mono text-amber"
+              style={{
+                fontSize: '11px',
+                padding: '4px 8px',
+                borderRadius: '4px',
+                background: 'rgba(245, 158, 11, 0.1)',
+                border: '1px solid rgba(245, 158, 11, 0.25)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+              role="status"
+            >
+              <AlertTriangle size={12} />
+              {pendingNotice}
+            </span>
+          )}
+          <button
+            className={`btn ${saved ? 'btn-success' : 'btn-primary'}`}
+            onClick={handleSave}
+            disabled={isSaving}
+            id="save-settings"
+          >
+            {isSaving ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Loader2 size={15} className="animate-spin" /> Saving...
+              </span>
+            ) : saved ? (
+              <><Check size={15} /> Saved!</>
+            ) : (
+              <><Save size={15} /> Save Changes</>
+            )}
+          </button>
+        </div>
       </div>
 
       <div className="settings-layout">
@@ -602,9 +675,14 @@ export default function Settings() {
                   <input
                     id="profile-new-password"
                     type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Leave blank to keep current password"
                     className="input"
                   />
+                  {newPassword.length > 0 && (
+                    <PasswordStrength password={newPassword} />
+                  )}
                 </div>
               </div>
             </section>

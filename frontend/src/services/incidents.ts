@@ -2,6 +2,7 @@ import api from '../lib/api';
 import { isMockEnabled, mockDelay } from './config';
 import { INITIAL_INCIDENTS, DASHBOARD_INCIDENTS } from './mock/incidents.mock';
 import { toIncident } from './mappers';
+import { fetchAllPages } from './pagination';
 import type { Incident } from '../types/domain';
 import type { IncidentApi, PaginatedResponse } from '../types/api';
 
@@ -42,13 +43,13 @@ export async function getIncidents(params?: IncidentFilterParams): Promise<Incid
   }
 
   const queryParams = new URLSearchParams();
+  queryParams.set('page_size', '100');
   if (params?.search) queryParams.set('search', params.search);
   if (params?.severity && params.severity !== 'all') queryParams.set('severity', params.severity);
   if (params?.status && params.status !== 'all') queryParams.set('status', params.status);
 
-  const url = `/api/incidents/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-  const response = await api.get<PaginatedResponse<IncidentApi> | IncidentApi[]>(url);
-  const rawList = Array.isArray(response.data) ? response.data : response.data?.results || [];
+  const url = `/api/incidents/?${queryParams.toString()}`;
+  const rawList = await fetchAllPages<IncidentApi>(url);
   return rawList.map(toIncident);
 }
 

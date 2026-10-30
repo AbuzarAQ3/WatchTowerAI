@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { authApi } from '../lib/api';
 import { getToken, setToken, clearToken } from '../lib/token';
+import { isMockEnabled, mockDelay } from '../services/config';
 
 export interface User {
   id?: string | number;
@@ -38,9 +39,10 @@ export interface AuthState {
   status: AuthStatus;
   pendingFlows: string[];
   pendingEmail: string | null;
-
-  // Actions
-  login: (username: string, password: string) => Promise<LoginResult>;
+  login: (
+    usernameOrCredentials: string | { username: string; password?: string },
+    password?: string
+  ) => Promise<LoginResult>;
   signup: (data: SignupData) => Promise<SignupResult>;
   logout: () => Promise<void>;
   restoreSession: () => Promise<void>;
@@ -49,7 +51,6 @@ export interface AuthState {
   setUser: (user: User | null) => void;
 }
 
-// Initial status: if a token exists in storage, start in loading to prevent login screen flash
 const initialToken = getToken();
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -63,10 +64,41 @@ export const useAuthStore = create<AuthState>((set) => ({
   setPendingEmail: (email: string | null) => set({ pendingEmail: email }),
   setUser: (user: User | null) => set({ user }),
 
-  login: async (username: string, password: string): Promise<LoginResult> => {
+  login: async (
+    usernameOrCredentials: string | { username: string; password?: string },
+    passwordArg?: string
+  ): Promise<LoginResult> => {
+    const username =
+      typeof usernameOrCredentials === 'string'
+        ? usernameOrCredentials
+        : usernameOrCredentials?.username || '';
+    const password =
+      typeof usernameOrCredentials === 'string'
+        ? passwordArg || ''
+        : usernameOrCredentials?.password || '';
+    // --- MOCK FOR LOCAL RUN ---
+    if (isMockEnabled()) {
+      await mockDelay(400);
+      const mockUser = {
+        id: 'mock-1',
+        username: username || 'abuzar',
+        email: `${username || 'abuzar'}@mock.local`,
+        display_name: username || 'abuzar',
+      };
+      const mockToken = 'mock-session-token-abuzar';
+      setToken(mockToken);
+      set({
+        user: mockUser,
+        token: mockToken,
+        status: 'authenticated',
+        pendingFlows: [],
+        pendingEmail: null,
+      });
+      return { kind: 'success', user: mockUser };
+    }
+
     try {
       const response = await authApi.post('/auth/login', { username, password });
-
       const meta = response.data?.meta;
       const responseData = response.data?.data;
       const sessionToken = meta?.session_token;
@@ -84,7 +116,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         return { kind: 'success', user };
       }
 
-      // Check if response contains pending flows despite 200
       const flows = (responseData?.flows || []).map((f: any) =>
         typeof f === 'string' ? f : f.id
       );
@@ -107,32 +138,30 @@ export const useAuthStore = create<AuthState>((set) => ({
       const status = response?.status;
       const data = response?.data;
 
-      // Case: 401 with pending flows (e.g. verify_email)
+      if (!response) {
+        return {
+          kind: 'error',
+          errors: [{ message: 'Backend unreachable. Check if backend is running on localhost:8000 or enable mock mode.' }],
+        };
+      }
+
       if (status === 401) {
         const flowsRaw = data?.data?.flows || data?.flows || [];
         const flows = flowsRaw.map((f: any) => (typeof f === 'string' ? f : f.id));
         const sessionToken = data?.meta?.session_token;
-
-        if (sessionToken) {
-          setToken(sessionToken);
-        }
-
+        if (sessionToken) setToken(sessionToken);
         set({
           token: sessionToken || null,
           pendingFlows: flows,
           status: 'unauthenticated',
         });
-
-        // TODO: MFA flow after login
         return { kind: 'pending', flows };
       }
 
-      // Case: 400 validation error
       if (status === 400 && data?.errors) {
         return { kind: 'error', errors: data.errors };
       }
 
-      // Generic or network error
       const message =
         data?.message ||
         data?.detail ||
@@ -148,6 +177,26 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signup: async (data: SignupData): Promise<SignupResult> => {
+    if (isMockEnabled()) {
+      await mockDelay(400);
+      const mockUser = {
+        id: 'mock-1',
+        username: data.username,
+        email: data.email,
+        display_name: data.username,
+      };
+      const mockToken = 'mock-session-token-abuzar';
+      setToken(mockToken);
+      set({
+        user: mockUser,
+        token: mockToken,
+        status: 'authenticated',
+        pendingFlows: [],
+        pendingEmail: null,
+      });
+      return { kind: 'success', user: mockUser };
+    }
+
     try {
       const response = await authApi.post('/auth/signup', {
         username: data.username,
@@ -195,27 +244,27 @@ export const useAuthStore = create<AuthState>((set) => ({
       const status = response?.status;
       const respData = response?.data;
 
-      // Case: 401 with pending flows (e.g. verify_email mandatory)
+      if (!response) {
+        return {
+          kind: 'error',
+          errors: [{ message: 'Backend unreachable. Check if backend is running on localhost:8000 or enable mock mode.' }],
+        };
+      }
+
       if (status === 401) {
         const flowsRaw = respData?.data?.flows || respData?.flows || [];
         const flows = flowsRaw.map((f: any) => (typeof f === 'string' ? f : f.id));
         const sessionToken = respData?.meta?.session_token;
-
-        if (sessionToken) {
-          setToken(sessionToken);
-        }
-
+        if (sessionToken) setToken(sessionToken);
         set({
           token: sessionToken || null,
           pendingFlows: flows,
           pendingEmail: data.email,
           status: 'unauthenticated',
         });
-
         return { kind: 'pending', flows };
       }
 
-      // Case: 400 validation error
       if (status === 400 && respData?.errors) {
         return { kind: 'error', errors: respData.errors };
       }
@@ -236,9 +285,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async (): Promise<void> => {
     try {
-      await authApi.delete('/auth/session');
+      if (!isMockEnabled()) {
+        await authApi.delete('/auth/session');
+      }
     } catch (error) {
-      // Regardless of server response (network error, expired session), clear locally
       console.warn('Backend logout failed or session already dead:', error);
     } finally {
       clearToken();
@@ -253,6 +303,21 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   restoreSession: async (): Promise<void> => {
+    if (isMockEnabled()) {
+      const token = getToken();
+      if (!token) {
+        set({ user: null, token: null, status: 'unauthenticated' });
+        return;
+      }
+      set({
+        user: { id: 'mock-1', username: 'abuzar', display_name: 'abuzar' },
+        token,
+        status: 'authenticated',
+        pendingFlows: [],
+      });
+      return;
+    }
+
     const token = getToken();
     if (!token) {
       set({ user: null, token: null, status: 'unauthenticated' });
@@ -312,7 +377,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         );
 
       if (hasPendingFlow) {
-        // Pending flow (e.g. verify_email): retain token, set pendingFlows, status stays "unauthenticated"
         const flows = flowsRaw.map((f: any) =>
           typeof f === 'string' ? f : f.id
         );
@@ -323,7 +387,6 @@ export const useAuthStore = create<AuthState>((set) => ({
           status: 'unauthenticated',
         });
       } else {
-        // Truly dead session (no pending flows or missing flows): clear token
         clearToken();
         set({ user: null, token: null, status: 'unauthenticated', pendingFlows: [] });
       }
@@ -332,8 +395,3 @@ export const useAuthStore = create<AuthState>((set) => ({
 }));
 
 export { useAuth } from '../hooks/useAuth';
-
-// TODO: Social login buttons driven by /config
-// TODO: MFA flow after login
-// TODO: Password reset UI
-// TODO: Refresh token rotation

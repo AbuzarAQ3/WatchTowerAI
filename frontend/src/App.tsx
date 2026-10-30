@@ -3,18 +3,20 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
+import { ToastProvider } from './components/Toast';
 
 // Pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import VerifyEmailPending from './pages/VerifyEmailPending';
-import VerifyEmail from './pages/VerifyEmail';
-import Dashboard from './pages/Dashboard';
-import Incidents from './pages/Incidents';
-import Cameras from './pages/Cameras';
-import Alerts from './pages/Alerts';
-import Settings from './pages/Settings';
-import AppLayout from './components/layout/AppLayout';
+const VerifyEmail = React.lazy(() => import('./pages/VerifyEmail'));
+// Lazy-loaded surveillance views
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Incidents = React.lazy(() => import('./pages/Incidents'));
+const Cameras = React.lazy(() => import('./pages/Cameras'));
+const Alerts = React.lazy(() => import('./pages/Alerts'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+import AppLayout, { ModuleLoadingFallback } from './components/layout/AppLayout';
 
 /**
  * Top-level Bootstrapper that restores active session on app mount
@@ -94,7 +96,22 @@ export function AppRoutes() {
 
         {/* Email verification routes */}
         <Route path="/verify-email/pending" element={<VerifyEmailPending />} />
-        <Route path="/account/verify-email/:key" element={<VerifyEmail />} />
+        <Route
+          path="/account/verify-email/:key"
+          element={
+            <React.Suspense fallback={<ModuleLoadingFallback />}>
+              <VerifyEmail />
+            </React.Suspense>
+          }
+        />
+        <Route
+          path="/verify-email/:key"
+          element={
+            <React.Suspense fallback={<ModuleLoadingFallback />}>
+              <VerifyEmail />
+            </React.Suspense>
+          }
+        />
 
         {/* Protected routes — Dashboard and surveillance views */}
         <Route
@@ -123,7 +140,9 @@ export function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <ToastProvider>
+        <AppRoutes />
+      </ToastProvider>
     </BrowserRouter>
   );
 }

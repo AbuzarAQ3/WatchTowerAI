@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../lib/api';
 
 type VerifyState = 'loading' | 'success' | 'expired' | 'invalid' | 'network_error';
 
-export default function VerifyEmail() {
+export function VerifyEmail() {
   const { key } = useParams<{ key: string }>();
+  const navigate = useNavigate();
   const [state, setState] = useState<VerifyState>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -33,8 +34,10 @@ export default function VerifyEmail() {
         setErrorMessage(errorItem?.message || 'The verification link has expired or is invalid.');
         setState('expired');
       } else if (!status) {
-        // Network error (no response received)
-        setErrorMessage(err.message || 'Unable to connect to verification server.');
+        // Network error (no response received / backend unreachable)
+        setErrorMessage(
+          'Backend unreachable. Check if backend is running on localhost:8000 or enable mock mode.'
+        );
         setState('network_error');
       } else {
         setState('expired');
@@ -48,9 +51,23 @@ export default function VerifyEmail() {
       return;
     }
 
-    // Key comes raw/decoded from React Router params
-    verifyKey(key);
+    // Decode key while preserving colon characters
+    try {
+      const decodedKey = decodeURIComponent(key);
+      verifyKey(decodedKey);
+    } catch {
+      verifyKey(key);
+    }
   }, [key, verifyKey]);
+
+  useEffect(() => {
+    if (state === 'success') {
+      const timer = setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [state, navigate]);
 
   return (
     <div
@@ -141,7 +158,7 @@ export default function VerifyEmail() {
               Email Address Verified
             </h2>
             <p style={{ fontSize: '12px', color: 'var(--clr-text-secondary, #94a3b8)', lineHeight: '1.6', marginBottom: '24px' }}>
-              Your operator account has been activated with verified security clearance. You may now authenticate.
+              Your operator account has been activated with verified security clearance. Redirecting to operator login in 2 seconds...
             </p>
             <Link
               to="/login"
@@ -188,22 +205,6 @@ export default function VerifyEmail() {
               {errorMessage || 'This verification link is no longer valid or has already been used.'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {/* TODO: Resend verification email */}
-              <button
-                type="button"
-                disabled
-                className="btn btn-ghost"
-                style={{
-                  width: '100%',
-                  justifyContent: 'center',
-                  padding: '12px',
-                  fontSize: '11px',
-                  opacity: 0.5,
-                  cursor: 'not-allowed',
-                }}
-              >
-                ↻ Resend Verification Key
-              </button>
               <Link
                 to="/signup"
                 className="btn btn-primary"
@@ -309,3 +310,6 @@ export default function VerifyEmail() {
     </div>
   );
 }
+
+export { VerifyEmail as VerifyEmailPage };
+export default VerifyEmail;

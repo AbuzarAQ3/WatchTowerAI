@@ -2,6 +2,7 @@ import api from '../lib/api';
 import { isMockEnabled, mockDelay } from './config';
 import { INITIAL_ALERTS } from './mock/alerts.mock';
 import { toAlert } from './mappers';
+import { fetchAllPages } from './pagination';
 import type { Alert } from '../types/domain';
 import type { AlertApi, PaginatedResponse } from '../types/api';
 
@@ -16,8 +17,7 @@ export async function getAlerts(): Promise<Alert[]> {
     return [...mockAlertsState];
   }
 
-  const response = await api.get<PaginatedResponse<AlertApi> | AlertApi[]>('/api/alerts/');
-  const rawList = Array.isArray(response.data) ? response.data : response.data?.results || [];
+  const rawList = await fetchAllPages<AlertApi>('/api/alerts/?page_size=100');
   return rawList.map(toAlert);
 }
 

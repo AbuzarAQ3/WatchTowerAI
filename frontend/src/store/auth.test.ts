@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAuthStore } from './auth';
 import { authApi } from '../lib/api';
 import * as tokenLib from '../lib/token';
+import * as config from '../services/config';
 
 vi.mock('../lib/api', () => ({
   authApi: {
@@ -20,6 +21,7 @@ describe('Auth Store (Zustand)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    vi.spyOn(config, 'isMockEnabled').mockReturnValue(false);
     useAuthStore.setState({
       user: null,
       token: null,
@@ -226,5 +228,18 @@ describe('Auth Store (Zustand)', () => {
     expect(state.user).toBeNull();
     expect(state.token).toBeNull();
     expect(tokenLib.getToken()).toBeNull();
+  });
+
+  it('supports mock mode: returns mock user without calling API when isMockEnabled() is true', async () => {
+    vi.spyOn(config, 'isMockEnabled').mockReturnValue(true);
+    const result = await useAuthStore.getState().login('operator', 'any');
+    expect(result.kind).toBe('success');
+    if (result.kind === 'success') {
+      expect(result.user.username).toBe('operator');
+    }
+    expect(authApi.post).not.toHaveBeenCalled();
+    const state = useAuthStore.getState();
+    expect(state.status).toBe('authenticated');
+    expect(tokenLib.getToken()).toBe('mock-session-token-abuzar');
   });
 });

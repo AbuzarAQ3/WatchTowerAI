@@ -1,6 +1,18 @@
 import { http, HttpResponse } from 'msw';
 
 export const handlers = [
+  // CORS Preflight handler
+  http.options('*', () => {
+    return new HttpResponse(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': '*',
+      },
+    });
+  }),
+
   // POST /auth/login
   http.post('*/_allauth/app/v1/auth/login', async ({ request }) => {
     const body = (await request.json()) as any;

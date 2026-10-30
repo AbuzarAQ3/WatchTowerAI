@@ -2,10 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Camera as CameraIcon, Wifi, WifiOff, Plus, X, ShieldAlert, MonitorPlay, AlertTriangle, RefreshCw } from 'lucide-react';
 import { getCameras, createCamera } from '../services/cameras';
 import { isMockEnabled } from '../services/config';
+import { useToast } from '../components/Toast';
 import type { Camera } from '../types/domain';
 import './Cameras.css';
 
 export default function Cameras() {
+  const { showToast } = useToast();
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [filter, setFilter] = useState<'all' | 'live' | 'offline' | 'maintenance'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -65,6 +67,7 @@ export default function Cameras() {
 
       setCameras((prev) => [...prev, newCam]);
       setShowAddModal(false);
+      showToast('Camera added successfully', 'success');
       setForm({
         name: '',
         zone: 'Entry',
@@ -74,6 +77,7 @@ export default function Cameras() {
       });
     } catch (err: any) {
       setFormError(err?.message || 'Failed to register camera. Please try again.');
+      showToast(err?.message || 'Failed to add camera', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -123,7 +127,7 @@ export default function Cameras() {
       </div>
 
       {errorMessage && (
-        <div className="card" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div role="alert" className="card" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <AlertTriangle size={18} className="text-danger" />
             <span style={{ fontSize: '13px', color: 'var(--clr-text-secondary)' }}>{errorMessage}</span>

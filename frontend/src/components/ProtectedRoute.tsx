@@ -43,7 +43,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  if (status === 'unauthenticated') {
+  if (status !== 'authenticated') {
     if (pendingFlows.includes('verify_email')) {
       return <Navigate to="/verify-email/pending" replace />;
     }

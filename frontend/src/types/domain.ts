@@ -7,8 +7,10 @@ export interface Camera {
   name: string;
   zone: string;
   ip: string;
+  location?: string;
   fps: number;
   status: 'live' | 'offline' | 'maintenance';
+  lastSeen?: string | null;
   isPlaying?: boolean;
   showDetections?: boolean;
 }

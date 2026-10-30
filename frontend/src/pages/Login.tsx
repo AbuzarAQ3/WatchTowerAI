@@ -31,10 +31,12 @@ export default function Login() {
         const from = (location.state as any)?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       } else if (result.kind === 'pending') {
-        setPendingEmail(username.includes('@') ? username : null);
-        navigate('/verify-email/pending', {
-          state: { email: username.includes('@') ? username : undefined },
-        });
+        if (result.flows.includes('verify_email')) {
+          setPendingEmail(username.includes('@') ? username : null);
+          navigate('/verify-email/pending', {
+            state: { email: username.includes('@') ? username : undefined },
+          });
+        }
       } else if (result.kind === 'error') {
         setErrors(result.errors);
       }
