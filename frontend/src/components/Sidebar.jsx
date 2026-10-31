@@ -8,6 +8,8 @@ import {
   Eye,
   LogOut,
 } from 'lucide-react'
+import { useAuth } from '../hooks/useAuth'
+import { useToast } from './Toast'
 import './Sidebar.css'
 
 const NAV_ITEMS = [
@@ -20,9 +22,12 @@ const NAV_ITEMS = [
 
 export default function Sidebar() {
   const navigate = useNavigate()
+  const { logout, user } = useAuth()
+  const { showToast } = useToast()
 
-  const handleLogout = () => {
-    // TODO: clear auth token before redirecting
+  const handleLogout = async () => {
+    await logout()
+    showToast('Logged out successfully', 'success')
     navigate('/login')
   }
 
@@ -65,16 +70,19 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="sidebar-footer">
         <div className="sidebar-user">
-          <div className="sidebar-avatar">A</div>
+          <div className="sidebar-avatar">
+            {user?.username ? user.username.charAt(0).toUpperCase() : 'A'}
+          </div>
           <div className="sidebar-user-info">
-            <p className="sidebar-user-name">Anuj</p>
-            <p className="sidebar-user-role">Frontend Lead</p>
+            <p className="sidebar-user-name">{user?.username || 'Anuj'}</p>
+            <p className="sidebar-user-role">Security Operator</p>
           </div>
           <button
             className="sidebar-logout-btn"
             onClick={handleLogout}
             title="Sign Out"
             id="sidebar-logout"
+            data-testid="sidebar-logout"
             aria-label="Logout"
           >
             <LogOut size={16} strokeWidth={1.8} />
