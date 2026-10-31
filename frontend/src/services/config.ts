@@ -19,3 +19,10 @@ export const mockDelay = async (ms = 350): Promise<void> => {
     await new Promise((resolve) => setTimeout(resolve, ms));
   }
 };
+
+/**
+ * Flag controlling whether user is automatically logged in after registration.
+ * Set to false so the user must explicitly log in after creating an account.
+ */
+export const AUTO_LOGIN_AFTER_SIGNUP = false;
+

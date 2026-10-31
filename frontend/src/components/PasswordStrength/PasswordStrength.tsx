@@ -1,43 +1,10 @@
 import React from 'react';
 import { Check, Circle } from 'lucide-react';
+import { PASSWORD_RULES } from './rules';
 
 export interface PasswordStrengthProps {
   password?: string;
 }
-
-export interface StrengthRule {
-  id: string;
-  label: string;
-  test: (pwd: string) => boolean;
-}
-
-export const PASSWORD_RULES: StrengthRule[] = [
-  {
-    id: 'length',
-    label: 'At least 8 characters',
-    test: (pwd) => pwd.length >= 8,
-  },
-  {
-    id: 'uppercase',
-    label: 'At least one uppercase letter (A-Z)',
-    test: (pwd) => /[A-Z]/.test(pwd),
-  },
-  {
-    id: 'lowercase',
-    label: 'At least one lowercase letter (a-z)',
-    test: (pwd) => /[a-z]/.test(pwd),
-  },
-  {
-    id: 'number',
-    label: 'At least one number (0-9)',
-    test: (pwd) => /[0-9]/.test(pwd),
-  },
-  {
-    id: 'special',
-    label: 'At least one special character (!@#$%^&*)',
-    test: (pwd) => /[^A-Za-z0-9]/.test(pwd),
-  },
-];
 
 export default function PasswordStrength({ password = '' }: PasswordStrengthProps) {
   return (

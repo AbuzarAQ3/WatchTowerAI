@@ -162,20 +162,39 @@ export default function Dashboard() {
   return (
     <div className="dashboard animate-fade-in">
       {/* === ADDED: Task #2 Serialization - Username, Account Details, Required Data === */}
-      <div className="card" style={{ marginBottom: '16px', display: 'flex', flexWrap: 'wrap', gap: '24px', padding: '16px 20px' }}>
+      <div data-testid="user-card" className="card" style={{ marginBottom: '16px', display: 'flex', flexWrap: 'wrap', gap: '24px', padding: '16px 20px' }}>
         <div>
           <p className="text-muted" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Username</p>
-          <p style={{ fontWeight: 600, fontSize: '15px' }}>{user?.username || 'Anuj'}</p>
+          <p data-testid="user-card-username" style={{ fontWeight: 600, fontSize: '15px' }}>
+            {isMockEnabled()
+              ? user?.username || 'mock-user'
+              : (user as any)?.display || user?.username || 'N/A'}
+          </p>
         </div>
         <div style={{ borderLeft: '1px solid var(--clr-border)', paddingLeft: '24px' }}>
           <p className="text-muted" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Account Details</p>
-          <p style={{ fontSize: '13px' }}>{user?.email || 'anuj@test.com'} • <span style={{ color: 'var(--clr-success)' }}>Active</span></p>
-          <p className="text-muted" style={{ fontSize: '11px' }}>ID: {user?.id || 'WT-001'}</p>
+          <p style={{ fontSize: '13px' }}>
+            <span data-testid="user-card-email">{isMockEnabled() ? (user?.email || 'mock@mock.local') : (user?.email || 'N/A')}</span>
+            {' • '}
+            <span data-testid="user-card-status" style={{ color: 'var(--clr-success)' }}>
+              {isMockEnabled() ? 'Active' : 'Authenticated'}
+            </span>
+          </p>
+          <p data-testid="user-card-id" className="text-muted" style={{ fontSize: '11px' }}>
+            ID: {isMockEnabled() ? (user?.id || 'mock-1') : (user?.id !== undefined && user?.id !== null ? user.id : 'N/A')}
+          </p>
         </div>
-        <div style={{ borderLeft: '1px solid var(--clr-border)', paddingLeft: '24px' }}>
-          <p className="text-muted" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Required Data</p>
-          <p style={{ fontSize: '13px' }}>{feeds.length} Cameras Assigned • Last login: {new Date().toLocaleDateString()}</p>
-        </div>
+        {isMockEnabled() ? (
+          <div style={{ borderLeft: '1px solid var(--clr-border)', paddingLeft: '24px' }}>
+            <p className="text-muted" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Required Data</p>
+            <p style={{ fontSize: '13px' }}>{feeds.length} Cameras Assigned • Last login: {new Date().toLocaleDateString()}</p>
+          </div>
+        ) : (user as any)?.assigned_cameras !== undefined && (user as any)?.assigned_cameras !== null ? (
+          <div style={{ borderLeft: '1px solid var(--clr-border)', paddingLeft: '24px' }}>
+            <p className="text-muted" style={{ fontSize: '11px', textTransform: 'uppercase' }}>Required Data</p>
+            <p style={{ fontSize: '13px' }}>{(user as any).assigned_cameras} Cameras Assigned</p>
+          </div>
+        ) : null}
       </div>
 
       {errorMessage && (

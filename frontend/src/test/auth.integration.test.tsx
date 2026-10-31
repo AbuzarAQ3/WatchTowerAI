@@ -15,9 +15,12 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
   const originalLocation = window.location;
   let locationHref = '';
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // Fail immediately if any unhandled request is executed
     server.listen({ onUnhandledRequest: 'error' });
+    // Warm lazy chunks to prevent cold-start happy-dom timeouts in Scenario 1 and Scenario 12
+    await import('../pages/Dashboard');
+    await import('../pages/Cameras');
   });
 
   afterAll(() => {
@@ -67,6 +70,11 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
       </MemoryRouter>
     );
 
+    const usernameInput = screen.getByTestId('login-username-input');
+    const passwordInput = screen.getByTestId('login-password-input');
+    fireEvent.change(usernameInput, { target: { value: 'abuzar' } });
+    fireEvent.change(passwordInput, { target: { value: 'StrongPass123!' } });
+
     const submitBtn = screen.getByTestId('login-submit-button');
     await userEvent.click(submitBtn);
 
@@ -110,9 +118,11 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
     );
 
     const usernameInput = screen.getByTestId('login-username-input');
+    const passwordInput = screen.getByTestId('login-password-input');
     const submitBtn = screen.getByTestId('login-submit-button');
 
     fireEvent.change(usernameInput, { target: { value: 'pending_user' } });
+    fireEvent.change(passwordInput, { target: { value: 'StrongPass123!' } });
     await userEvent.click(submitBtn);
 
     await waitFor(() => {
@@ -124,7 +134,37 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
     expect(useAuthStore.getState().pendingFlows).toContain('verify_email');
   });
 
-  it('Scenario 4: Signup success — auto-logs in and navigates to dashboard', async () => {
+  it('Scenario 4: Signup success — redirects to /login with banner, then login succeeds to dashboard', async () => {
+    let deleteSessionToken: string | null = null;
+    server.use(
+      http.delete('*/_allauth/app/v1/auth/session', ({ request }) => {
+        deleteSessionToken = request.headers.get('X-Session-Token');
+        return HttpResponse.json({ status: 200, data: {} });
+      }),
+      http.post('*/_allauth/app/v1/auth/login', async ({ request }) => {
+        const body = (await request.json()) as any;
+        if (body?.username === 'john_doe' && body?.password === 'StrongPassword123!') {
+          return HttpResponse.json({
+            status: 200,
+            data: {
+              user: { id: 2, username: 'john_doe', email: 'john@example.com' },
+            },
+            meta: {
+              is_authenticated: true,
+              session_token: 'session_token_john_login',
+            },
+          });
+        }
+        return HttpResponse.json(
+          {
+            status: 400,
+            errors: [{ param: 'password', code: 'invalid_credentials', message: 'Invalid credentials' }],
+          },
+          { status: 400 }
+        );
+      })
+    );
+
     render(
       <MemoryRouter initialEntries={['/signup']}>
         <AppRoutes />
@@ -141,10 +181,33 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
     fireEvent.change(passwordInput, { target: { value: 'StrongPassword123!' } });
     await userEvent.click(submitBtn);
 
-    expect(await screen.findByText(/Camera Feeds/i, {}, { timeout: 4000 })).toBeInTheDocument();
+    // 1. Should navigate to /login and show banner
+    const banner = await screen.findByTestId('registered-success-banner');
+    expect(banner).toHaveTextContent('Account created. Please log in.');
 
-    expect(tokenLib.getToken()).toBe('session_token_signup_success');
+    // 2. DELETE /auth/session was called with X-Session-Token from signup
+    expect(deleteSessionToken).toBe('session_token_signup_success');
+
+    // 3. User is unauthenticated and token is cleared
+    expect(tokenLib.getToken()).toBeNull();
+    expect(useAuthStore.getState().status).toBe('unauthenticated');
+
+    // 4. On login form, username is prefilled from state, password is empty
+    const loginUser = screen.getByTestId('login-username-input') as HTMLInputElement;
+    const loginPass = screen.getByTestId('login-password-input') as HTMLInputElement;
+    expect(loginUser.value).toBe('john_doe');
+    expect(loginPass.value).toBe('');
+
+    // 5. Now log in with password
+    fireEvent.change(loginPass, { target: { value: 'StrongPassword123!' } });
+    const loginSubmitBtn = screen.getByTestId('login-submit-button');
+    await userEvent.click(loginSubmitBtn);
+
+    // 6. Should navigate to dashboard
+    expect(await screen.findByText(/Camera Feeds/i, {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(tokenLib.getToken()).toBe('session_token_john_login');
     expect(useAuthStore.getState().status).toBe('authenticated');
+    expect(useAuthStore.getState().user?.username).toBe('john_doe');
   });
 
   it('Scenario 5: Signup pending verification — navigates to /verify-email/pending with email', async () => {
@@ -458,6 +521,11 @@ describe('Auth Integration Tests (MSW + React Testing Library)', () => {
         <AppRoutes />
       </MemoryRouter>
     );
+
+    const usernameInput = screen.getByTestId('login-username-input');
+    const passwordInput = screen.getByTestId('login-password-input');
+    fireEvent.change(usernameInput, { target: { value: 'abuzar' } });
+    fireEvent.change(passwordInput, { target: { value: 'StrongPass123!' } });
 
     const submitBtn = screen.getByTestId('login-submit-button');
 

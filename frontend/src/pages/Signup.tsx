@@ -4,6 +4,9 @@ import { useAuth } from '../hooks/useAuth';
 import type { ApiError } from '../store/auth';
 import { FormErrors, FieldError, getFieldError } from '../components/FormErrors';
 import PasswordStrength from '../components/PasswordStrength/PasswordStrength';
+import { getPasswordStrengthLevel } from '../components/PasswordStrength/rules';
+import { AUTO_LOGIN_AFTER_SIGNUP } from '../services/config';
+import type { LoginLocationState } from '../types/router';
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -20,17 +23,7 @@ export default function Signup() {
   const emailError = getFieldError(errors, 'email');
   const passwordError = getFieldError(errors, 'password');
 
-  // Password strength calculation
-  const getPasswordStrength = (pwd: string) => {
-    let score = 0;
-    if (pwd.length >= 8) score++;
-    if (/[A-Z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
-    if (/[^A-Za-z0-9]/.test(pwd)) score++;
-    return score;
-  };
-
-  const strength = getPasswordStrength(password);
+  const strength = getPasswordStrengthLevel(password);
   const strengthLabels = ['WEAK', 'FAIR', 'GOOD', 'STRONG'];
   const strengthColors = ['var(--clr-danger, #ef4444)', 'var(--clr-warning, #f59e0b)', 'var(--clr-cyan, #22d3ee)', 'var(--clr-success, #10b981)'];
 
@@ -43,7 +36,14 @@ export default function Signup() {
       const result = await signup({ username, email, password });
 
       if (result.kind === 'success') {
-        navigate('/dashboard', { replace: true });
+        if (AUTO_LOGIN_AFTER_SIGNUP) {
+          navigate('/dashboard', { replace: true });
+        } else {
+          navigate('/login', {
+            replace: true,
+            state: { registered: true, username } satisfies LoginLocationState,
+          });
+        }
       } else if (result.kind === 'pending') {
         if (result.flows.includes('verify_email')) {
           setPendingEmail(email);
@@ -238,7 +238,10 @@ export default function Signup() {
 
             {/* Password strength indicator */}
             {password.length > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
+              <div
+                data-testid="password-strength-bar"
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}
+              >
                 <div style={{ display: 'flex', flex: 1, gap: '4px' }}>
                   {[1, 2, 3, 4].map((i) => (
                     <div

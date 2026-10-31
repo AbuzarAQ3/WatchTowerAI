@@ -1,20 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import type { ApiError } from '../store/auth';
 import { FormErrors, FieldError, getFieldError } from '../components/FormErrors';
+import type { LoginLocationState } from '../types/router';
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const location = useLocation() as { state: LoginLocationState | null; pathname: string };
   const { login, setPendingEmail } = useAuth();
 
-  const [username, setUsername] = useState('abuzar');
-  const [password, setPassword] = useState('StrongPass123!');
+  const [showRegisteredBanner, setShowRegisteredBanner] = useState(
+    location.state?.registered === true
+  );
+  const [username, setUsername] = useState(location.state?.username || '');
+  const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [role, setRole] = useState('ADMIN');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<ApiError[]>([]);
+
+  useEffect(() => {
+    if (location.state?.registered) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const usernameError = getFieldError(errors, 'username');
   const passwordError = getFieldError(errors, 'password');
@@ -28,7 +38,7 @@ export default function Login() {
       const result = await login(username, password);
 
       if (result.kind === 'success') {
-        const from = (location.state as any)?.from?.pathname || '/dashboard';
+        const from = location.state?.from?.pathname || '/dashboard';
         navigate(from, { replace: true });
       } else if (result.kind === 'pending') {
         if (result.flows.includes('verify_email')) {
@@ -96,6 +106,7 @@ export default function Login() {
       >
         {/* LEFT - SECURITY TERMINAL */}
         <div
+          data-testid="auth-gateway-panel"
           style={{
             background: 'linear-gradient(180deg, #0F1624 0%, #090D14 100%)',
             padding: '28px',
@@ -223,7 +234,7 @@ export default function Login() {
           </div>
 
           {/* Live Threat Feed */}
-          <div style={{ marginTop: '18px' }} className="card">
+          <div data-testid="threat-feed" style={{ marginTop: '18px' }} className="card">
             <p style={{ fontSize: '9px', letterSpacing: '0.2em', color: 'var(--clr-text-muted, #4b5a72)', marginBottom: '8px' }}>
               LIVE THREAT FEED // ZONE-BRAVO
             </p>
@@ -264,6 +275,25 @@ export default function Login() {
 
           {/* Top-level banner errors */}
           <FormErrors errors={errors} />
+
+          {showRegisteredBanner && (
+            <div
+              data-testid="registered-success-banner"
+              className="badge badge-success"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 14px',
+                marginBottom: '16px',
+                fontSize: '11px',
+                lineHeight: '1.4',
+                borderRadius: '8px',
+              }}
+            >
+              <span>Account created. Please log in.</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {/* Operator Identifier (Username) */}

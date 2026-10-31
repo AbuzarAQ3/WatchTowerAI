@@ -1,7 +1,21 @@
 import { create } from 'zustand';
 import { authApi } from '../lib/api';
 import { getToken, setToken, clearToken } from '../lib/token';
-import { isMockEnabled, mockDelay } from '../services/config';
+import { isMockEnabled, mockDelay, AUTO_LOGIN_AFTER_SIGNUP } from '../services/config';
+
+export const SEEDED_DEMO_USER = {
+  username: 'demo',
+  password: 'Demo@1234',
+  user: {
+    id: 'mock-demo-1',
+    username: 'demo',
+    email: 'demo@watchtower.mock',
+    display: 'Demo Operator',
+    display_name: 'Demo Operator',
+  },
+};
+
+const mockUsersDb = new Map<string, { user: User; password: string }>();
 
 export interface User {
   id?: string | number;
@@ -79,22 +93,72 @@ export const useAuthStore = create<AuthState>((set) => ({
     // --- MOCK FOR LOCAL RUN ---
     if (isMockEnabled()) {
       await mockDelay(400);
-      const mockUser = {
-        id: 'mock-1',
-        username: username || 'abuzar',
-        email: `${username || 'abuzar'}@mock.local`,
-        display_name: username || 'abuzar',
+      const cleanUsername = (username || '').trim().toLowerCase();
+
+      // Check seeded demo user
+      if (cleanUsername === SEEDED_DEMO_USER.username.toLowerCase()) {
+        if (password !== SEEDED_DEMO_USER.password) {
+          return {
+            kind: 'error',
+            errors: [
+              {
+                message: 'Invalid credentials. Check your username and password.',
+                param: 'password',
+                code: 'invalid_credentials',
+              },
+            ],
+          };
+        }
+        const mockToken = 'mock-session-token-demo';
+        setToken(mockToken);
+        set({
+          user: SEEDED_DEMO_USER.user,
+          token: mockToken,
+          status: 'authenticated',
+          pendingFlows: [],
+          pendingEmail: null,
+        });
+        return { kind: 'success', user: SEEDED_DEMO_USER.user };
+      }
+
+      // Check users registered in-memory via mock signup
+      const stored = mockUsersDb.get(cleanUsername);
+      if (stored) {
+        if (stored.password !== password) {
+          return {
+            kind: 'error',
+            errors: [
+              {
+                message: 'Invalid credentials. Check your username and password.',
+                param: 'password',
+                code: 'invalid_credentials',
+              },
+            ],
+          };
+        }
+        const mockToken = `mock-session-token-${stored.user.username}`;
+        setToken(mockToken);
+        set({
+          user: stored.user,
+          token: mockToken,
+          status: 'authenticated',
+          pendingFlows: [],
+          pendingEmail: null,
+        });
+        return { kind: 'success', user: stored.user };
+      }
+
+      // Any other username returns 400 invalid credentials
+      return {
+        kind: 'error',
+        errors: [
+          {
+            message: 'Invalid credentials. Check your username and password.',
+            param: 'password',
+            code: 'invalid_credentials',
+          },
+        ],
       };
-      const mockToken = 'mock-session-token-abuzar';
-      setToken(mockToken);
-      set({
-        user: mockUser,
-        token: mockToken,
-        status: 'authenticated',
-        pendingFlows: [],
-        pendingEmail: null,
-      });
-      return { kind: 'success', user: mockUser };
     }
 
     try {
@@ -180,17 +244,36 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (isMockEnabled()) {
       await mockDelay(400);
       const mockUser = {
-        id: 'mock-1',
+        id: `mock-${mockUsersDb.size + 1}`,
         username: data.username,
         email: data.email,
+        display: data.username,
         display_name: data.username,
       };
-      const mockToken = 'mock-session-token-abuzar';
-      setToken(mockToken);
-      set({
+      // Store credentials only in-memory (never in localStorage or sessionStorage)
+      mockUsersDb.set(data.username.trim().toLowerCase(), {
         user: mockUser,
-        token: mockToken,
-        status: 'authenticated',
+        password: data.password,
+      });
+
+      if (AUTO_LOGIN_AFTER_SIGNUP) {
+        const mockToken = `mock-session-token-${data.username}`;
+        setToken(mockToken);
+        set({
+          user: mockUser,
+          token: mockToken,
+          status: 'authenticated',
+          pendingFlows: [],
+          pendingEmail: null,
+        });
+        return { kind: 'success', user: mockUser };
+      }
+
+      clearToken();
+      set({
+        user: null,
+        token: null,
+        status: 'unauthenticated',
         pendingFlows: [],
         pendingEmail: null,
       });
@@ -210,14 +293,37 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = responseData?.user || responseData;
 
       if (meta?.is_authenticated && sessionToken) {
-        setToken(sessionToken);
-        set({
-          user,
-          token: sessionToken,
-          status: 'authenticated',
-          pendingFlows: [],
-          pendingEmail: null,
-        });
+        if (AUTO_LOGIN_AFTER_SIGNUP) {
+          setToken(sessionToken);
+          set({
+            user,
+            token: sessionToken,
+            status: 'authenticated',
+            pendingFlows: [],
+            pendingEmail: null,
+          });
+          return { kind: 'success', user };
+        }
+
+        try {
+          // a. First setToken(sessionToken) so that request interceptor adds X-Session-Token header
+          setToken(sessionToken);
+          // b. Call authApi.delete('/auth/session') for session invalidation (best-effort)
+          await authApi.delete('/auth/session');
+        } catch {
+          // Ignore invalidation errors on backend
+        } finally {
+          // c. In finally block, clearToken() and set store to unauthenticated
+          clearToken();
+          set({
+            user: null,
+            token: null,
+            status: 'unauthenticated',
+            pendingFlows: [],
+            pendingEmail: null,
+          });
+        }
+        // d. Return { kind: 'success', user }
         return { kind: 'success', user };
       }
 

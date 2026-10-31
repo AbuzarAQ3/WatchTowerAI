@@ -230,16 +230,100 @@ describe('Auth Store (Zustand)', () => {
     expect(tokenLib.getToken()).toBeNull();
   });
 
-  it('supports mock mode: returns mock user without calling API when isMockEnabled() is true', async () => {
+  it('supports mock mode: login succeeds for seeded demo user without calling API', async () => {
     vi.spyOn(config, 'isMockEnabled').mockReturnValue(true);
-    const result = await useAuthStore.getState().login('operator', 'any');
+    const result = await useAuthStore.getState().login('demo', 'Demo@1234');
     expect(result.kind).toBe('success');
     if (result.kind === 'success') {
-      expect(result.user.username).toBe('operator');
+      expect(result.user.username).toBe('demo');
     }
     expect(authApi.post).not.toHaveBeenCalled();
     const state = useAuthStore.getState();
     expect(state.status).toBe('authenticated');
-    expect(tokenLib.getToken()).toBe('mock-session-token-abuzar');
+    expect(tokenLib.getToken()).toBe('mock-session-token-demo');
+  });
+
+  it('supports mock mode: login fails with 400 invalid_credentials for unregistered users or wrong password', async () => {
+    vi.spyOn(config, 'isMockEnabled').mockReturnValue(true);
+    const resultUnregistered = await useAuthStore.getState().login('random_user', 'any');
+    expect(resultUnregistered.kind).toBe('error');
+    if (resultUnregistered.kind === 'error') {
+      expect(resultUnregistered.errors[0].code).toBe('invalid_credentials');
+    }
+
+    const resultWrongPass = await useAuthStore.getState().login('demo', 'WrongPassword');
+    expect(resultWrongPass.kind).toBe('error');
+    if (resultWrongPass.kind === 'error') {
+      expect(resultWrongPass.errors[0].code).toBe('invalid_credentials');
+    }
+
+    expect(authApi.post).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().status).toBe('unauthenticated');
+    expect(tokenLib.getToken()).toBeNull();
+  });
+
+  it('supports mock mode: signup registers user in mockUsersDb, leaves unauthenticated, and subsequent login succeeds', async () => {
+    vi.spyOn(config, 'isMockEnabled').mockReturnValue(true);
+    const signupResult = await useAuthStore.getState().signup({
+      username: 'new_pilot',
+      email: 'pilot@mock.local',
+      password: 'PilotPass123!',
+    });
+    expect(signupResult.kind).toBe('success');
+    if (signupResult.kind === 'success') {
+      expect(signupResult.user.username).toBe('new_pilot');
+    }
+
+    // Should NOT be authenticated after signup
+    expect(useAuthStore.getState().status).toBe('unauthenticated');
+    expect(tokenLib.getToken()).toBeNull();
+
+    // Now login with new credentials
+    const loginResult = await useAuthStore.getState().login('new_pilot', 'PilotPass123!');
+    expect(loginResult.kind).toBe('success');
+    expect(useAuthStore.getState().status).toBe('authenticated');
+    expect(tokenLib.getToken()).toBe('mock-session-token-new_pilot');
+  });
+
+  it('handles real mode signup: invalidates session via DELETE /auth/session, clears token, leaves unauthenticated', async () => {
+    const mockUser = { id: 5, username: 'agent007', email: 'agent@wt.local' };
+    const mockSessionToken = 'session_signup_token_777';
+
+    vi.mocked(authApi.post).mockResolvedValueOnce({
+      data: {
+        status: 200,
+        data: { user: mockUser },
+        meta: { is_authenticated: true, session_token: mockSessionToken },
+      },
+    } as any);
+
+    let tokenDuringDelete: string | null = null;
+    vi.mocked(authApi.delete).mockImplementationOnce(async () => {
+      tokenDuringDelete = tokenLib.getToken();
+      return { data: { status: 200 } } as any;
+    });
+
+    const result = await useAuthStore.getState().signup({
+      username: 'agent007',
+      email: 'agent@wt.local',
+      password: 'AgentPass123!',
+    });
+
+    expect(result.kind).toBe('success');
+    expect(authApi.post).toHaveBeenCalledWith('/auth/signup', {
+      username: 'agent007',
+      email: 'agent@wt.local',
+      password: 'AgentPass123!',
+    });
+    // Invalidation called DELETE /auth/session with token set in storage
+    expect(authApi.delete).toHaveBeenCalledWith('/auth/session');
+    expect(tokenDuringDelete).toBe(mockSessionToken);
+
+    // After signup, token is cleared and status is unauthenticated
+    expect(tokenLib.getToken()).toBeNull();
+    const state = useAuthStore.getState();
+    expect(state.status).toBe('unauthenticated');
+    expect(state.token).toBeNull();
+    expect(state.user).toBeNull();
   });
 });

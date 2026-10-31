@@ -82,6 +82,7 @@ export default function Sidebar() {
             onClick={handleLogout}
             title="Sign Out"
             id="sidebar-logout"
+            data-testid="sidebar-logout"
             aria-label="Logout"
           >
             <LogOut size={16} strokeWidth={1.8} />
