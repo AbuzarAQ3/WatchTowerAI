@@ -1,68 +1,76 @@
-import { useState, useEffect, useRef } from 'react'
-import { Bell, Search, X, Settings, LayoutDashboard, Camera, ShieldAlert } from 'lucide-react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import './TopBar.css'
+import React, { useState, useEffect, useRef } from 'react';
+import { Bell, Search, X, Settings, LayoutDashboard, Camera as CameraIcon, ShieldAlert } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { isMockEnabled } from '../services/config';
+import './TopBar.css';
 
-const PAGE_TITLES = {
+const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   '/dashboard': { title: 'Dashboard', sub: 'Overview of live security status' },
-  '/cameras':   { title: 'Cameras',   sub: 'Manage and monitor camera feeds' },
+  '/cameras': { title: 'Cameras', sub: 'Manage and monitor camera feeds' },
   '/incidents': { title: 'Incidents', sub: 'Detected security events log' },
-  '/alerts':    { title: 'Alerts',    sub: 'Active and recent system alerts' },
-  '/settings':  { title: 'Settings',  sub: 'System configuration and preferences' },
-}
+  '/alerts': { title: 'Alerts', sub: 'Active and recent system alerts' },
+  '/settings': { title: 'Settings', sub: 'System configuration and preferences' },
+};
 
 const QUICK_LINKS = [
-  { label: 'Dashboard',  path: '/dashboard',  icon: LayoutDashboard },
-  { label: 'Cameras',    path: '/cameras',     icon: Camera },
-  { label: 'Incidents',  path: '/incidents',   icon: ShieldAlert },
-  { label: 'Alerts',     path: '/alerts',      icon: Bell },
-  { label: 'Settings',   path: '/settings',    icon: Settings },
-]
+  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+  { label: 'Cameras', path: '/cameras', icon: CameraIcon },
+  { label: 'Incidents', path: '/incidents', icon: ShieldAlert },
+  { label: 'Alerts', path: '/alerts', icon: Bell },
+  { label: 'Settings', path: '/settings', icon: Settings },
+];
 
 export default function TopBar() {
-  const { pathname } = useLocation()
-  const navigate = useNavigate()
-  const page = PAGE_TITLES[pathname] ?? { title: 'WatchTowerAI', sub: '' }
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const page = PAGE_TITLES[pathname] ?? { title: 'WatchTowerAI', sub: '' };
 
-  const [now, setNow] = useState('')
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const searchRef = useRef(null)
+  const [now, setNow] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const formatTime = () => {
-      setNow(new Date().toLocaleString('en-IN', {
-        weekday: 'short', day: '2-digit', month: 'short',
-        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
-      }))
-    }
-    formatTime()
-    const interval = setInterval(formatTime, 1000)
-    return () => clearInterval(interval)
-  }, [])
+      setNow(
+        new Date().toLocaleString('en-IN', {
+          weekday: 'short',
+          day: '2-digit',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        })
+      );
+    };
+    formatTime();
+    const interval = setInterval(formatTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
-    if (searchOpen && searchRef.current) searchRef.current.focus()
-  }, [searchOpen])
+    if (searchOpen && searchRef.current) searchRef.current.focus();
+  }, [searchOpen]);
 
   // Close search on Escape
   useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === 'Escape') setSearchOpen(false)
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [])
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSearchOpen(false);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
-  const filteredLinks = QUICK_LINKS.filter(l =>
+  const filteredLinks = QUICK_LINKS.filter((l) =>
     l.label.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  );
 
-  const handleNavigate = (path) => {
-    navigate(path)
-    setSearchOpen(false)
-    setSearchQuery('')
-  }
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setSearchOpen(false);
+    setSearchQuery('');
+  };
 
   return (
     <>
@@ -79,17 +87,31 @@ export default function TopBar() {
             className={`topbar-btn ${searchOpen ? 'topbar-btn--active' : ''}`}
             id="topbar-search"
             aria-label="Search"
-            onClick={() => setSearchOpen(v => !v)}
+            onClick={() => setSearchOpen((v) => !v)}
           >
             <Search size={17} strokeWidth={2} />
           </button>
 
-          <button className="topbar-btn topbar-bell" id="topbar-alerts" aria-label="Alerts" onClick={() => navigate('/alerts')}>
+          <button
+            className="topbar-btn topbar-bell"
+            id="topbar-alerts"
+            aria-label="Alerts"
+            onClick={() => navigate('/alerts')}
+          >
             <Bell size={17} strokeWidth={2} />
             <span className="topbar-notif">3</span>
           </button>
 
           <div className="topbar-divider" />
+
+          {isMockEnabled() && (
+            <span
+              className="badge badge-warning"
+              style={{ fontSize: '10px', padding: '2px 6px', letterSpacing: '0.05em' }}
+            >
+              MOCK DATA
+            </span>
+          )}
 
           <div className="topbar-system">
             <span className="badge badge-success">
@@ -115,7 +137,11 @@ export default function TopBar() {
                 className="topbar-search-input"
                 id="global-search-input"
               />
-              <button className="topbar-search-close" onClick={() => setSearchOpen(false)} aria-label="Close search">
+              <button
+                className="topbar-search-close"
+                onClick={() => setSearchOpen(false)}
+                aria-label="Close search"
+              >
                 <X size={16} />
               </button>
             </div>
@@ -141,5 +167,5 @@ export default function TopBar() {
         </div>
       )}
     </>
-  )
+  );
 }

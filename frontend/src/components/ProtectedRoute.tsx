@@ -1,0 +1,56 @@
+import React from 'react';
+import { Navigate, useLocation, Outlet } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
+
+interface ProtectedRouteProps {
+  children?: React.ReactNode;
+}
+
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { status, pendingFlows } = useAuth();
+  const location = useLocation();
+
+  if (status === 'loading') {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: 'var(--clr-bg-base, #090d14)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '16px',
+          color: 'var(--clr-text-primary, #e2e8f0)',
+          fontFamily: 'var(--font-mono, monospace)',
+        }}
+      >
+        <div
+          style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid rgba(245, 158, 11, 0.2)',
+            borderTopColor: 'var(--clr-amber, #f59e0b)',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }}
+        />
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        <p style={{ fontSize: '11px', letterSpacing: '0.2em', color: 'var(--clr-text-secondary, #94a3b8)' }}>
+          VERIFYING ACCESS CLEARANCE...
+        </p>
+      </div>
+    );
+  }
+
+  if (status !== 'authenticated') {
+    if (pendingFlows.includes('verify_email')) {
+      return <Navigate to="/verify-email/pending" replace />;
+    }
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children ? <>{children}</> : <Outlet />;
+};
+
+export default ProtectedRoute;
