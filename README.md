@@ -96,15 +96,14 @@ Confidence: 0.91
 Evidence: intrusion_17.jpg
 ```
 
+
 ## Dev Notes:
 
-Abuzar, Team Lead: "Hi, this is a completely a new type of project with tech req that we have barely worked on. This is exactly the type of challenge I believe we will excell in, grasping new tech, binding and utilizing them together to solve a real worked problem in a workable, deployable and usable product."
+| Name | Role | GitHub | Comments |
+| :--- | :--- | :--- | :--- |
+| *[Shahabuzar]* | Team Lead, Backend Lead | [@AbuzarAQ3](https://github.com/AbuzarAQ3) | [Hi, this is a completely a new type of project with tech req that we have barely worked on. This is exactly the type of challenge I believe we will excell in, grasping new tech, binding and utilizing them together to solve a real worked problem in a workable, deployable and usable product] |
+| *[Anuj Trivedi]* | Frontend Lead | [@anujtrivedi7589](https://github.com/anujtrivedi7589) | [Building the face of WatchTowerAI - Responsive dashboard, real-time monitoring, and seamless AI integration.] |
+| *[Shikha Singh]* | Frontend Developer | [@shikhasingh-tech](https://github.com/shikhasingh-tech) | [Working on frontend development - Responsive dashboard, real-time monitoring, and seamless AI integration. Learning React frontend.] |
+| *[Shivangi Shukla]* | Backend Developer | [@shivangi577](https://github.com/shivangi577) | [Working on Django backend development, learning Django REST Framework (DRF), and integrating the React frontend with the backend through REST APIs.] |
 
-Anuj, Frontend Lead: ""
-
-Shikha, Frontend Dev: ""
-
-Shivangi, Backend Dev: ""
-
-## PS: 
-WatchTowerAI is our 7th sem uni's minor-project, currently under development.
+#### WatchTowerAI is our 7th sem uni's minor-project, currently under development.
