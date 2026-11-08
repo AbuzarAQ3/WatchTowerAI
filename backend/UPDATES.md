@@ -1,10 +1,8 @@
-DEV NOTES:
+# DEV NOTES:
 
-FEATS:
+## Under Development Features:
+1. Core Detection and Tracking Model
 
-CHANGES:
-
-1. adding username + email for login in the same field.
-
-BUGS:
-
+## Bug Fixes:
+1. Auth failure on client side fixed.
+2. .env variables cleaned up and properly configed.
