@@ -5,6 +5,12 @@ import ProtectedRoute from './components/ProtectedRoute';
 import PublicOnlyRoute from './components/PublicOnlyRoute';
 import { ToastProvider } from './components/Toast';
 
+
+// prototype_test_view
+import CameraView from './pages/CameraView';
+import CameraView1 from './pages/CameraView1';
+
+
 // Pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -128,6 +134,11 @@ export function AppRoutes() {
           <Route path="cameras" element={<Cameras />} />
           <Route path="alerts" element={<Alerts />} />
           <Route path="settings" element={<Settings />} />
+
+
+          {/* prototype test urls */}
+          <Route path="camera-view" element={<CameraView />} />
+          <Route path="camera-view-1" element={<CameraView1 />} />
         </Route>
 
         {/* Catch-all redirect */}
