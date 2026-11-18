@@ -4,7 +4,7 @@ import { getCameras, createCamera } from '../services/cameras';
 import { isMockEnabled } from '../services/config';
 import { useToast } from '../components/Toast';
 import type { Camera } from '../types/domain';
-import './Cameras.css';
+
 
 export default function Cameras() {
   const { showToast } = useToast();
