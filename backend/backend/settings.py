@@ -14,11 +14,13 @@ import os
 from pathlib import Path
 from pathlib import Path
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR.parent
-load_dotenv(PROJECT_ROOT / ".env")
+load_dotenv(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -122,8 +124,6 @@ else:
         }
     }
 
-AUTH_USER_MODEL = 'users.CustomUser'
-
 # Password validation
 # https://docs.djangoproject.com/en/6.1/ref/settings/#auth-password-validators
 
@@ -171,9 +171,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
 MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
+    "default": {"BACKEND": "django.core.mail.backends.base.console.EmailBackend"},
 }
 
 # django rest_framework config
@@ -218,7 +216,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_HEADERS = [
     *default_headers,
-    "x-session-token",          # session token auth
-    "x-email-verification-key", # email verification
-    "x-password-reset-key",     # password reset
+    "x-session-token",
+    "x-email-verification-key",
+    "x-password-reset-key",
 ]
